@@ -16,6 +16,12 @@ html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   transform: translateZ(0);
+  /* Enhanced smooth scrolling */
+  scroll-padding-top: 80px;
+  scroll-snap-type: y proximity;
+  /* GPU acceleration for smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
 }
 
 body {
@@ -970,8 +976,8 @@ canvas {
 /* Biomorphic Effects */
 .biomorphic-shape {
   border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  animation: biomorphic-morph 8s ease-in-out infinite;
 }
+
 
 @keyframes biomorphic-morph {
   0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
@@ -995,4 +1001,288 @@ canvas {
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced Lenis Smooth Scrolling Styles - Optimized for Performance */
+.smooth-scroll-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+/* Performance-optimized parallax elements */
+.parallax {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  contain: layout style paint;
+}
+
+/* Optimized scroll animations */
+.scale-on-scroll {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: layout style paint;
+}
+
+.rotate-on-scroll {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: layout style paint;
+}
+
+.fade-on-scroll {
+  will-change: opacity;
+  contain: layout style paint;
+}
+
+/* Smooth scroll snap points */
+.scroll-snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.scroll-snap-container {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+/* Enhanced scroll indicators - Performance optimized */
+.scroll-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #00C3FF, #3E6FF6);
+  transform-origin: left;
+  transform: scaleX(0);
+  z-index: 9999;
+  will-change: transform;
+  contain: layout style paint;
+}
+
+/* Smooth scroll momentum */
+.momentum-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* GPU-accelerated smooth scrolling - Enhanced */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+  contain: layout style paint;
+}
+
+/* Performance-optimized easing classes */
+.ease-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.ease-buttery {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
+}
+
+.ease-elastic {
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  will-change: transform, opacity;
+}
+
+/* Lenis-specific performance optimizations */
+.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .parallax,
+  .scale-on-scroll,
+  .rotate-on-scroll,
+  .fade-on-scroll {
+    will-change: auto;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  
+  .scroll-indicator {
+    transition: none;
+  }
+}
+
+/* High performance scroll containers */
+.high-performance-scroll {
+  contain: layout style paint;
+  will-change: scroll-position;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Optimized Scroll Animation Classes */
+.slide-up-on-scroll {
+  opacity: 0;
+  transform: translate3d(0, 50px, 0);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.slide-left-on-scroll {
+  opacity: 0;
+  transform: translate3d(-50px, 0, 0);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.slide-right-on-scroll {
+  opacity: 0;
+  transform: translate3d(50px, 0, 0);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.zoom-in-on-scroll {
+  opacity: 0;
+  transform: scale3d(0.8, 0.8, 1);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.flip-on-scroll {
+  opacity: 0;
+  transform: rotateY(90deg);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.fade-on-scroll {
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+/* Animation trigger classes */
+.slide-up-on-scroll.visible,
+.slide-left-on-scroll.visible,
+.slide-right-on-scroll.visible,
+.zoom-in-on-scroll.visible,
+.flip-on-scroll.visible,
+.fade-on-scroll.visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale3d(1, 1, 1) rotateY(0deg);
+}
+
+/* Scroll-based Animation Classes */
+.scale-on-scroll {
+  transform: scale(0.8);
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+.rotate-on-scroll {
+  transform: rotate(0deg);
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+.fade-on-scroll {
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+  will-change: opacity;
+}
+
+.parallax {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Enhanced scroll animations */
+.slide-up-on-scroll {
+  transform: translateY(50px);
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-left-on-scroll {
+  transform: translateX(-50px);
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-right-on-scroll {
+  transform: translateX(50px);
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.zoom-in-on-scroll {
+  transform: scale(0.5);
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.flip-on-scroll {
+  transform: rotateY(90deg);
+  opacity: 0;
+  transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Scroll-triggered animations */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Floating animation for scroll elements */
+.float-on-scroll {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Pulse animation for scroll elements */
+.pulse-on-scroll {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Glow animation for scroll elements */
+.glow-on-scroll {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px rgba(0, 195, 255, 0.3); }
+  to { box-shadow: 0 0 30px rgba(0, 195, 255, 0.6); }
+}
+
+/* Gradient shift animation for masked text */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }

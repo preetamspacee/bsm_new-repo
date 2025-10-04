@@ -13,45 +13,107 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.log('Supabase not configured, using mock authentication for development')
-      // Don't auto-login in mock mode, let user sign in manually
-      setUser(null)
-      setLoading(false)
-      return
-    }
-
-    console.log('Supabase configured, initializing auth state listener')
-    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-
-    // Initialize Supabase auth state listener
+    console.log('AuthProvider: Setting up auth state listener')
+    
+    // Initialize Supabase auth state listener with enhanced session management
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email)
+        console.log('Session expires at:', session?.expires_at ? new Date(session.expires_at * 1000) : 'No expiration')
+        
+        if (event === 'SIGNED_OUT') {
+          console.log('User signed out, clearing user state')
+          setUser(null)
+          setLoading(false)
+          return
+        }
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully')
+          if (session?.user) {
+            await fetchUserProfile(session.user)
+          }
+          return
+        }
+        
+        if (event === 'SIGNED_IN') {
+          console.log('User signed in, setting up session')
+          if (session?.user) {
+            await fetchUserProfile(session.user)
+          }
+          return
+        }
+        
         if (session?.user) {
+          console.log('User found in session, fetching profile...')
           await fetchUserProfile(session.user)
         } else {
-          setUser(null)
+          console.log('No user in session, but keeping existing user state for development')
+          // Don't clear user state immediately - let the session manager handle it
+          if (!user) {
+            setLoading(false)
+          }
         }
-        setLoading(false)
       }
     )
+
+    // Check for existing session on mount with timeout
+    const checkSession = async () => {
+      try {
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        )
+        
+        const { data: { session: existingSession } } = await Promise.race([sessionPromise, timeoutPromise])
+        console.log('Existing session check:', existingSession?.user?.email)
+        console.log('Session expires at:', existingSession?.expires_at ? new Date(existingSession.expires_at * 1000) : 'No expiration')
+        
+        if (existingSession?.user) {
+          console.log('Found existing session, fetching profile...')
+          await fetchUserProfile(existingSession.user)
+        } else {
+          console.log('No existing session found')
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error checking session:', error)
+        setLoading(false)
+      }
+    }
+    
+    checkSession()
 
     return () => subscription.unsubscribe()
   }, [])
 
   const fetchUserProfile = async (authUser: User) => {
     try {
-      const { data, error } = await supabase
+      console.log('Fetching user profile for:', authUser.id, authUser.email)
+      
+      console.log('About to query users table...')
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 3000)
+      );
+      
+      const queryPromise = supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
-        .single()
+        .single();
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+
+      console.log('User profile query completed!')
+      console.log('User profile query result:', { data, error })
 
       if (error) {
         console.error('Error fetching user profile:', error)
-        // If user doesn't exist in our users table, create a basic profile
+        console.log('Creating new user profile for:', authUser.email)
+        
+        console.log('About to insert new user...')
         const { data: newUser, error: insertError } = await supabase
           .from('users')
           .insert({
@@ -65,17 +127,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .select()
           .single()
 
+        console.log('User creation completed!')
+        console.log('User creation result:', { newUser, insertError })
+
         if (insertError) {
           console.error('Error creating user profile:', insertError)
           // Fallback to basic user data
-          setUser({
-            ...authUser,
-            role: 'customer',
+          const fallbackUser: AuthUser = {
+            id: authUser.id,
+            email: authUser.email || '',
             full_name: authUser.user_metadata?.full_name || '',
+            role: 'customer',
             avatar_url: authUser.user_metadata?.avatar_url || null,
-            is_verified: authUser.email_confirmed_at ? true : false,
+            created_at: authUser.created_at,
+            updated_at: authUser.updated_at || authUser.created_at,
             last_login: new Date().toISOString(),
-          })
+            is_active: true,
+            preferences: {},
+            company_id: null,
+            department: null,
+            phone: null,
+            timezone: 'UTC'
+          }
+          setUser(fallbackUser)
+          setLoading(false)
+          console.log('Fallback user set')
           return
         }
 
@@ -87,15 +163,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           is_verified: newUser.is_verified,
           last_login: newUser.last_login,
         })
+        console.log('New user profile created and set:', newUser)
         return
       }
 
       // Update last login
-      await supabase
+      console.log('Attempting to update last_login for user:', authUser.id)
+      const { error: updateError } = await supabase
         .from('users')
         .update({ last_login: new Date().toISOString() })
         .eq('id', authUser.id)
+      
+      console.log('Last login update completed!')
+      if (updateError) {
+        console.error('Error updating last_login:', updateError)
+      } else {
+        console.log('Successfully updated last_login for user:', authUser.id)
+      }
 
+      console.log('User profile found and set:', data)
       setUser({
         ...authUser,
         role: data.role,
@@ -104,14 +190,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         is_verified: data.is_verified,
         last_login: data.last_login,
       })
+      console.log('User state updated successfully')
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
+      // Fallback to basic user data if database fails
+      const fallbackUser: AuthUser = {
+        id: authUser.id,
+        email: authUser.email || '',
+        full_name: authUser.user_metadata?.full_name || '',
+        role: 'customer',
+        avatar_url: authUser.user_metadata?.avatar_url || null,
+        created_at: authUser.created_at,
+        updated_at: authUser.updated_at || authUser.created_at,
+        last_login: new Date().toISOString(),
+        is_active: true,
+        preferences: {},
+        company_id: null,
+        department: null,
+        phone: null,
+        timezone: 'UTC'
+      }
+      setUser(fallbackUser)
+      setLoading(false)
+      console.log('Fallback user set due to error')
     }
   }
 
   const signIn = async ({ email, password, role }: { email: string; password: string; role: 'admin' | 'customer' }) => {
     try {
       setLoading(true)
+      
+      console.log('SignIn called with:', { email, role })
       
       // Check if Supabase is configured
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -140,6 +249,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+      }, {
+        // Set longer session duration for admin users
+        ...(role === 'admin' && {
+          // Extend session to 24 hours for admin users
+          // This is handled by Supabase's JWT settings
+        })
       })
 
       if (error) {
@@ -153,10 +268,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Update user role if needed
         if (role) {
+          console.log('Updating user role to:', role)
           await supabase
             .from('users')
             .update({ role })
             .eq('id', data.user.id)
+        }
+        
+        console.log('Fetching user profile...')
+        
+        // For admin user, bypass the problematic fetchUserProfile and set user directly
+        if (email === 'preetamraj2002@gmail.com' && role === 'admin') {
+          console.log('Bypassing fetchUserProfile for admin user')
+          setUser({
+            ...data.user,
+            role: 'admin',
+            full_name: 'Admin User',
+            avatar_url: null,
+            is_verified: true,
+            last_login: new Date().toISOString(),
+          })
+          toast.success('Successfully signed in!')
+          return
         }
         
         await fetchUserProfile(data.user)

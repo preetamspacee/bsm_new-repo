@@ -1,14 +1,13 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Shield, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { useAuth } from '@/components/providers/auth-provider'
+import { CornerCircleBar } from '@/components/ui/corner-circle-bar'
+import { RotatingWheelAnimation } from '@/components/ui/rotating-wheel-animation'
+import { ParticleSystem } from '@/components/ui/particle-system'
+import { BSMLogo } from '@/components/ui/bsm-logo'
 import Link from 'next/link'
 
 function LoginForm() {
@@ -25,161 +24,328 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  // Scroll-based animations
+  const { scrollYProgress } = useScroll()
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '-50%'])
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [1, 1, 1, 0])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
 
     try {
-      await signIn(formData)
-      router.push(`/${formData.role}/dashboard`)
+      console.log('Attempting login with:', formData)
+      
+      // Add a timeout to prevent hanging
+      const loginPromise = signIn(formData)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Login timeout')), 10000)
+      )
+      
+      await Promise.race([loginPromise, timeoutPromise])
+      
+      console.log('Login successful, redirecting to:', `/${formData.role}/dashboard`)
+      
+      // Add a small delay to ensure auth state is updated
+      setTimeout(() => {
+        console.log('Executing redirect now...')
+        router.push(`/${formData.role}/dashboard`)
+      }, 100)
+      
     } catch (err: any) {
+      console.error('Login error:', err)
       setError(err.message || 'Login failed')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
-      <div className="w-full max-w-md">
-        {/* Back to Home */}
-        <div className="mb-6">
-          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 relative overflow-hidden">
+      {/* Enhanced Particle System */}
+      <ParticleSystem count={20} speed={0.3} size={1} color="rgba(255, 255, 255, 0.3)" />
+      
+      {/* Animated Background Gradient */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700"
+        style={{ y }}
+      />
+      
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 z-10 p-6">
+        <div className="flex justify-between items-center">
+          {/* Brand */}
+          <motion.div 
+            className="flex items-center space-x-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <BSMLogo size={32} className="shadow-lg" />
+            <span className="text-white text-lg font-medium">BSM Platform</span>
+          </motion.div>
+          
+          {/* Navigation */}
+          <motion.nav 
+            className="flex space-x-6"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Link href="/" className="text-white hover:text-blue-200 transition-colors">
+              Home
+            </Link>
+            <Link href="/auth/signup" className="text-white hover:text-blue-200 transition-colors">
+              Sign Up
+            </Link>
+          </motion.nav>
         </div>
+      </header>
 
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-            <Shield className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to your BSM Platform account</p>
-        </div>
+      {/* Rotating Wheel Animation */}
+      <RotatingWheelAnimation />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your {formData.role} portal
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Role Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="role">Portal Type</Label>
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
+      {/* Main Content */}
+      <div className="flex items-center justify-center min-h-screen px-6">
+        <div className="w-full max-w-md">
+          {/* Main Heading */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 
+              className="text-4xl md:text-5xl font-bold mb-8 leading-tight"
+              style={{
+                backgroundImage: 'linear-gradient(45deg, #00C3FF 0%, #3E6FF6 25%, #8B5CF6 50%, #F59E0B 75%, #10B981 100%)',
+                backgroundSize: '400% 400%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: 'contrast(1.3) brightness(1.2) saturate(1.1)',
+                letterSpacing: '-0.02em',
+                textShadow: '0 0 40px rgba(0,0,0,0.4)',
+                animation: 'gradientShift 6s ease infinite'
+              }}
+            >
+              Sign in to your account
+            </h1>
+          </motion.div>
+
+          {/* Login Form */}
+          <motion.form
+            onSubmit={handleSubmit}
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            {/* Email Field */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <label className="block text-white text-sm font-medium mb-2">
+                Email *
+              </label>
+              <div className="relative group">
+                <motion.input
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  className="w-full bg-transparent border-b-2 border-white text-white placeholder-white/70 focus:outline-none focus:border-blue-300 py-2 transition-all duration-300 group-hover:border-blue-200"
+                  placeholder="Enter your email"
+                  required
+                  whileFocus={{ scale: 1.02 }}
+                />
+                <motion.div
+                  className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"
+                  initial={{ width: 0 }}
+                  whileFocus={{ width: "100%" }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Password Field */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <label className="block text-white text-sm font-medium mb-2">
+                Password *
+              </label>
+              <div className="relative group">
+                <motion.input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="w-full bg-transparent border-b-2 border-white text-white placeholder-white/70 focus:outline-none focus:border-blue-300 py-2 transition-all duration-300 group-hover:border-blue-200"
+                  placeholder="Enter your password"
+                  required
+                  whileFocus={{ scale: 1.02 }}
+                />
+                <motion.button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 top-2 text-white/70 hover:text-white transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  <option value="customer">Customer Portal</option>
-                  <option value="admin">Admin Portal</option>
-                </select>
+                  {showPassword ? 'Hide' : 'Show'}
+                </motion.button>
+                <motion.div
+                  className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"
+                  initial={{ width: 0 }}
+                  whileFocus={{ width: "100%" }}
+                  transition={{ duration: 0.3 }}
+                />
               </div>
+            </motion.div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+            {/* Role Selection */}
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">
+                Portal Type
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as 'admin' | 'customer' }))}
+                className="w-full bg-transparent border-b-2 border-white text-white focus:outline-none focus:border-blue-300 py-2"
+              >
+                <option value="customer" className="bg-blue-800">Customer Portal</option>
+                <option value="admin" className="bg-blue-800">Admin Portal</option>
+              </select>
+            </div>
 
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+            {/* Error Message */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-300 text-sm bg-red-900/20 border border-red-500/30 rounded p-3"
+              >
+                {error}
+              </motion.div>
+            )}
 
-              {/* Error Message */}
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {/* Submit Button */}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
-              </Button>
-            </form>
-
-            {/* Additional Links */}
-            <div className="mt-6 space-y-4">
-              <div className="text-center">
-                <Link 
-                  href="/auth/forgot-password" 
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
+            {/* Submit Button */}
+            <motion.button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              <span className="relative z-10">{isLoading ? 'Signing in...' : 'Sign In'}</span>
               
-              <div className="text-center">
-                <span className="text-sm text-muted-foreground">
-                  Don't have an account?{' '}
-                </span>
-                <Link 
-                  href="/auth/signup" 
-                  className="text-sm text-primary hover:underline"
-                >
-                  Sign up
-                </Link>
-              </div>
-            </div>
+              {/* Shimmer Effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                initial={{ x: '-100%' }}
+                whileHover={{ x: '100%' }}
+                transition={{ duration: 0.6 }}
+              />
+              
+              {/* Glow Effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 blur-sm opacity-0"
+                whileHover={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            </motion.button>
+          </motion.form>
 
-            {/* Demo Credentials */}
-            <div className="mt-6 p-4 bg-muted rounded-lg">
-              <h4 className="text-sm font-medium mb-2">Demo Credentials</h4>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <div><strong>Admin:</strong> admin@bsm-platform.com / admin123</div>
-                <div><strong>Customer:</strong> customer@bsm-platform.com / customer123</div>
-              </div>
+          {/* Additional Links */}
+          <motion.div
+            className="mt-8 space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <div className="text-center">
+              <Link 
+                href="/auth/forgot-password" 
+                className="text-white/80 hover:text-white transition-colors text-sm"
+              >
+                Forgot your password?
+              </Link>
             </div>
-          </CardContent>
-        </Card>
+            
+            <div className="text-center">
+              <span className="text-white/80 text-sm">
+                Don't have an account?{' '}
+              </span>
+              <Link 
+                href="/auth/signup" 
+                className="text-white hover:text-blue-200 transition-colors text-sm font-medium"
+              >
+                Sign up
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Demo Credentials */}
+          <motion.div
+            className="mt-8 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <h4 className="text-white font-medium mb-3 text-sm">Login Credentials</h4>
+            <div className="text-white/80 text-xs space-y-2">
+              <div><strong>Admin:</strong> preetamraj2002@gmail.com / admin123</div>
+              <div><strong>Customer:</strong> preetamspacee@gmail.com / customer123</div>
+            </div>
+          </motion.div>
+        </div>
       </div>
+
+      {/* Footer */}
+      <footer className="absolute bottom-0 left-0 right-0 p-6">
+        <div className="flex justify-between items-center">
+          {/* Social Links */}
+          <div className="flex space-x-4">
+            <a href="#" className="text-white/80 hover:text-white transition-colors text-sm">
+              LinkedIn
+            </a>
+            <a href="#" className="text-white/80 hover:text-white transition-colors text-sm">
+              Facebook
+            </a>
+            <a href="#" className="text-white/80 hover:text-white transition-colors text-sm">
+              Instagram
+            </a>
+          </div>
+          
+          {/* Privacy Policy */}
+          <div className="text-white/80 text-sm">
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+          </div>
+          
+          {/* Copyright */}
+          <div className="text-white/60 text-xs">
+            © 2024 by BSM Platform. Made with Next.js
+          </div>
+        </div>
+      </footer>
+
+      {/* Corner Circle Bar */}
+      <CornerCircleBar />
     </div>
   )
 }

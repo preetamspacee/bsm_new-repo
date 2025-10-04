@@ -164,7 +164,7 @@ export function InteractionEcosystem() {
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.path
               key={i}
-              d={`M ${Math.random() * 100}%,${Math.random() * 100}% Q ${mousePosition.x / window.innerWidth * 100}%,${mousePosition.y / window.innerHeight * 100}% ${Math.random() * 100}%,${Math.random() * 100}%`}
+              d={`M ${0}%, ${50}% Q ${25}%, ${25}%, ${50}%, ${50}% T ${100}%, ${50}%`}
               stroke="#8B5CF6"
               strokeWidth="1"
               fill="none"

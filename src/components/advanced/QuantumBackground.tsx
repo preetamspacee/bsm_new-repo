@@ -1,318 +1,242 @@
 'use client'
 
-import { useRef, useEffect, useMemo } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Points, PointMaterial, Sphere, MeshDistortMaterial } from '@react-three/drei'
-import * as THREE from 'three'
 import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
 
-// Quantum Particle Field Component
-function QuantumParticles({ count = 500 }: { count?: number }) {
-  const points = useRef<THREE.Points>(null)
-  const { viewport } = useThree()
+// Adaptive Background Component for Light/Dark modes
+export function QuantumBackground() {
+  const [isClient, setIsClient] = useState(false)
 
-  const particlesPosition = useMemo(() => {
-    const positions = new Float32Array(count * 3)
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * viewport.width * 2
-      positions[i * 3 + 1] = (Math.random() - 0.5) * viewport.height * 2
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 10
-    }
-    return positions
-  }, [count, viewport])
-
-  useFrame((state) => {
-    if (points.current && state.clock.elapsedTime % 0.016 < 0.008) { // 60fps cap for performance
-      const positions = points.current.geometry.attributes.position.array as Float32Array
-      for (let i = 0; i < count; i += 4) { // Process every 4th particle
-        positions[i * 3 + 1] += Math.sin(state.clock.elapsedTime + i * 0.01) * 0.0005
-        positions[i * 3] += Math.cos(state.clock.elapsedTime + i * 0.01) * 0.0002
-      }
-      points.current.geometry.attributes.position.needsUpdate = true
-    }
-  })
-
-  return (
-    <Points ref={points} positions={particlesPosition} stride={3} frustumCulled={false}>
-      <PointMaterial
-        transparent
-        color="#0066FF"
-        size={0.005}
-        sizeAttenuation={true}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </Points>
-  )
-}
-
-// Neural Network Visualization
-function NeuralNetwork() {
-  const group = useRef<THREE.Group>(null)
-  const nodes = useMemo(() => {
-    const nodePositions = []
-    for (let i = 0; i < 8; i++) { // Reduced for better performance
-      nodePositions.push([
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20
-      ])
-    }
-    return nodePositions
+  useEffect(() => {
+    setIsClient(true)
   }, [])
 
-  useFrame((state) => {
-    if (group.current && state.clock.elapsedTime % 0.016 < 0.008) { // 60fps cap
-      group.current.rotation.y = state.clock.elapsedTime * 0.05
-      group.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.05
-    }
-  })
+  // Fixed positions to prevent hydration mismatch
+  const orbPositions = [
+    { left: 15, top: 20 },
+    { left: 75, top: 60 },
+    { left: 30, top: 80 },
+    { left: 85, top: 15 },
+    { left: 50, top: 40 },
+    { left: 65, top: 90 }
+  ]
+
+  const particlePositions = Array.from({ length: 20 }, (_, i) => ({
+    left: (i * 5) % 100,
+    top: (i * 7) % 100
+  }))
+
+  const linePositions = Array.from({ length: 8 }, (_, i) => ({
+    left: (i * 12) % 80,
+    top: (i * 15) % 80,
+    rotate: (i * 45) % 360
+  }))
+
+  const shapePositions = Array.from({ length: 6 }, (_, i) => ({
+    left: (i * 18) % 100,
+    top: (i * 22) % 100,
+    rotate: (i * 60) % 360
+  }))
+
+  if (!isClient) {
+    return (
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0F1421] via-[#131722] to-[#0F1421] dark:block hidden" />
+      </div>
+    )
+  }
 
   return (
-    <group ref={group}>
-      {nodes.map((position, index) => (
-        <Sphere key={index} position={position as [number, number, number]} args={[0.05, 2, 2]}>
-          <MeshDistortMaterial
-            color="#8B5CF6"
-            attach="material"
-            distort={0.3}
-            speed={2}
-            roughness={0}
-            metalness={0.8}
-          />
-        </Sphere>
-      ))}
-    </group>
-  )
-}
-
-// Optimized Fluid Simulation Canvas
-function FluidSimulation() {
-  const mesh = useRef<THREE.Mesh>(null)
-  
-  useFrame((state) => {
-    if (mesh.current && state.clock.elapsedTime % 0.016 < 0.008) { // 60fps cap
-      mesh.current.rotation.x = state.clock.elapsedTime * 0.1
-      mesh.current.rotation.y = state.clock.elapsedTime * 0.05
-      const material = mesh.current.material as THREE.ShaderMaterial
-      if (material.uniforms) {
-        material.uniforms.time.value = state.clock.elapsedTime
-      }
-    }
-  })
-
-  return (
-    <mesh ref={mesh} position={[0, 0, -5]}>
-      <planeGeometry args={[20, 20, 32, 32]} />
-      <shaderMaterial
-        uniforms={{
-          time: { value: 0 },
-          color1: { value: new THREE.Color('#0066FF') },
-          color2: { value: new THREE.Color('#8B5CF6') }
-        }}
-        vertexShader={`
-          uniform float time;
-          varying vec2 vUv;
-          varying vec3 vPosition;
-          
-          void main() {
-            vUv = uv;
-            vPosition = position;
-            vec3 pos = position;
-            pos.z += sin(pos.x * 5.0 + time) * 0.05;
-            pos.z += cos(pos.y * 5.0 + time) * 0.05;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-          }
-        `}
-        fragmentShader={`
-          uniform float time;
-          uniform vec3 color1;
-          uniform vec3 color2;
-          varying vec2 vUv;
-          varying vec3 vPosition;
-          
-          void main() {
-            float noise = sin(vPosition.x * 5.0 + time) * cos(vPosition.y * 5.0 + time);
-            vec3 color = mix(color1, color2, noise * 0.3 + 0.5);
-            gl_FragColor = vec4(color, 0.2);
-          }
-        `}
-        transparent
-        blending={THREE.AdditiveBlending}
-      />
-    </mesh>
-  )
-}
-
-// Holographic Grid Matrix - Removed as requested
-
-// Main Background Component
-export function QuantumBackground() {
-  return (
-    <div className="fixed inset-0 -z-10">
-      {/* Colorful CSS Background Layers */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{
-          background: [
-            'linear-gradient(135deg, #FF0080 0%, #00FFFF 25%, #FFFF00 50%, #FF00FF 75%, #FF0080 100%)',
-            'linear-gradient(135deg, #00FFFF 0%, #FFFF00 25%, #FF00FF 50%, #FF0080 75%, #00FFFF 100%)',
-            'linear-gradient(135deg, #FFFF00 0%, #FF00FF 25%, #FF0080 50%, #00FFFF 75%, #FFFF00 100%)',
-            'linear-gradient(135deg, #FF00FF 0%, #FF0080 25%, #00FFFF 50%, #FFFF00 75%, #FF00FF 100%)'
-          ]
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-      />
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      {/* Dark Mode Elements (hidden in light mode) */}
       
-      {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* DataBoard-Inspired Deep Background - Only visible in dark mode */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0F1421] via-[#131722] to-[#0F1421] dark:block hidden" />
       
-      {/* Light Theme - Live Light Elements */}
-      <motion.div
-        className="absolute inset-0 light:block dark:hidden midnight:hidden"
-        animate={{
-          background: [
-            'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 25%, #f3e8ff 50%, #fef3c7 75%, #f0f9ff 100%)',
-            'linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 25%, #fef3c7 50%, #f0f9ff 75%, #e0e7ff 100%)',
-            'linear-gradient(135deg, #f3e8ff 0%, #fef3c7 25%, #f0f9ff 50%, #e0e7ff 75%, #f3e8ff 100%)',
-            'linear-gradient(135deg, #fef3c7 0%, #f0f9ff 25%, #e0e7ff 50%, #f3e8ff 75%, #fef3c7 100%)'
-          ]
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-      />
-      
-      {/* Colorful Floating Orbs */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(4)].map((_, i) => (
+      {/* Animated Background Orbs - Only visible in dark mode */}
+      <div className="absolute inset-0 dark:block hidden">
+        {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-40 h-40 rounded-full blur-xl opacity-60"
+            className="absolute rounded-full blur-3xl"
             style={{
-              background: `radial-gradient(circle, ${
-                ['#FF0080', '#00FFFF', '#FFFF00', '#FF00FF', '#00FF00', '#FF6600', '#FF0066', '#6600FF'][i % 8]
-              }80, transparent 70%)`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              width: `${200 + i * 50}px`,
+              height: `${200 + i * 50}px`,
+              left: `${orbPositions[i].left}%`,
+              top: `${orbPositions[i].top}%`,
+              background: `radial-gradient(circle at 30% 30%, rgba(${
+                [147, 51, 234, 59, 130, 246][i % 6]
+              }, 0.1) 0%, transparent 70%)`
             }}
             animate={{
-              x: [0, Math.random() * 300 - 150, 0],
-              y: [0, Math.random() * 300 - 150, 0],
-              scale: [0.8, 1.5, 0.8],
-              opacity: [0.3, 0.7, 0.3],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 0.5,
-              type: "tween"
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Animated Overlay */}
-      <motion.div
-        className="absolute inset-0 opacity-30"
-        animate={{
-          background: [
-            'radial-gradient(circle at 20% 50%, rgba(0, 102, 255, 0.1) 0%, transparent 50%)',
-            'radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)',
-            'radial-gradient(circle at 40% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%)',
-            'radial-gradient(circle at 20% 50%, rgba(0, 102, 255, 0.1) 0%, transparent 50%)'
-          ]
-        }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", type: "tween" }}
-      />
-
-      {/* 3D Canvas */}
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 75 }}
-        style={{ position: 'absolute', top: 0, left: 0 }}
-        gl={{ alpha: true, antialias: false, powerPreference: "high-performance", precision: "mediump" }}
-      >
-        <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={0.5} color="#0066FF" />
-        <pointLight position={[-10, -10, -10]} intensity={0.3} color="#8B5CF6" />
-        
-        <QuantumParticles count={500} />
-        <NeuralNetwork />
-        <FluidSimulation />
-        {/* HolographicGrid removed as requested */}
-      </Canvas>
-
-      {/* Data Stream Rivers */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-px h-32 bg-gradient-to-b from-transparent via-cyan-400 to-transparent"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: ['-100vh', '100vh'],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-              ease: "linear"
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Magnetic Field Lines */}
-      <div className="absolute inset-0">
-        <svg className="w-full h-full opacity-20">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <motion.path
-              key={i}
-              d={`M 0,${100 + i * 80} Q ${200 + i * 50},${50 + i * 30} ${400 + i * 100},${100 + i * 80} T 800,${100 + i * 80}`}
-              stroke="#00FFFF"
-              strokeWidth="1"
-              fill="none"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{
-                duration: 4 + i * 0.5,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            />
-          ))}
-        </svg>
-      </div>
-
-      {/* Cosmic Dust Clouds */}
-      <div className="absolute inset-0">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-64 h-64 rounded-full opacity-10"
-            style={{
-              background: `radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%)`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              scale: [1, 1.5, 1],
+              x: [0, (i % 2 === 0 ? 50 : -50), 0],
+              y: [0, (i % 3 === 0 ? 30 : -30), 0],
+              scale: [0.8, 1.4, 0.8],
               opacity: [0.1, 0.3, 0.1],
-              x: [0, Math.random() * 100 - 50, 0],
-              y: [0, Math.random() * 100 - 50, 0],
             }}
             transition={{
-              duration: 2 + Math.random() * 1,
+              duration: 12 + i * 3,
               repeat: Infinity,
               ease: "easeInOut",
-              type: "tween"
+              delay: i * 2,
             }}
           />
         ))}
       </div>
+
+      {/* DataBoard-Inspired Grid - Only visible in dark mode */}
+      <motion.div
+        className="absolute inset-0 dark:block hidden"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(0, 195, 255, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 195, 255, 0.08) 1px, transparent 1px),
+            linear-gradient(rgba(42, 46, 57, 0.6) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(42, 46, 57, 0.6) 1px, transparent 1px)
+          `,
+          backgroundSize: '120px 120px, 120px 120px, 40px 40px, 40px 40px'
+        }}
+        animate={{
+          backgroundPosition: ['0px 0px', '120px 120px']
+        }}
+        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+      />
+
+      {/* Fluent Floating Particles - Only visible in dark mode */}
+      <div className="absolute inset-0 dark:block hidden">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-white/20 rounded-full"
+            style={{
+              left: `${particlePositions[i].left}%`,
+              top: `${particlePositions[i].top}%`,
+            }}
+            animate={{
+              y: ['100vh', '-100vh'],
+              x: [0, (i % 2 === 0 ? 30 : -30)],
+              opacity: [0, 0.6, 0],
+              scale: [0, 1.5, 0],
+            }}
+            transition={{
+              duration: 8 + (i % 4),
+              repeat: Infinity,
+              delay: i * 0.4,
+              ease: "easeOut"
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Modern Connection Lines - Only visible in dark mode */}
+      <div className="absolute inset-0 dark:block hidden">
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            style={{
+              width: `${100 + i * 50}px`,
+              left: `${linePositions[i].left}%`,
+              top: `${linePositions[i].top}%`,
+              transform: `rotate(${linePositions[i].rotate}deg)`
+            }}
+            animate={{
+              opacity: [0, 0.4, 0],
+              scale: [0.5, 1.2, 0.5],
+              rotate: [linePositions[i].rotate, linePositions[i].rotate + 360]
+            }}
+            transition={{
+              duration: 10 + (i % 5),
+              repeat: Infinity,
+              delay: i * 0.6,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Animated Geometric Shapes - Only visible in dark mode */}
+      <div className="absolute inset-0 overflow-hidden dark:block hidden">
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-4 h-4 border border-white/10"
+            style={{
+              left: `${shapePositions[i].left}%`,
+              top: `${shapePositions[i].top}%`,
+              rotate: `${shapePositions[i].rotate}deg`
+            }}
+            animate={{
+              rotate: [shapePositions[i].rotate, shapePositions[i].rotate + 360],
+              opacity: [0.1, 0.3, 0.1],
+              scale: [0.5, 1, 0.5],
+            }}
+            transition={{
+              duration: 6 + i,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.5
+            }}
+          />
+          ))}
+      </div>
+
+      {/* Modern Breathing Overlay - Only visible in dark mode */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-indigo-900/5 via-purple-900/10 to-blue-900/5 dark:block hidden"
+        animate={{
+          opacity: [0.3, 0.7, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+
+      {/* Subtle Noise Texture - Only visible in dark mode */}
+      <div 
+        className="absolute inset-0 opacity-5 dark:block hidden"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 80%, rgba(120,119,198,0.3), transparent),
+            radial-gradient(circle at 80% 20%, rgba(255,119,198,0.3), transparent),
+            radial-gradient(circle at 40% 40%, rgba(120,219,255,0.3), transparent)
+          `,
+          backgroundSize: '200px 200px'
+        }}
+      />
+
+      {/* Modern Blur Zones - Only visible in dark mode */}
+      <div className="absolute inset-0 dark:block hidden">
+        {[...Array(3)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute backdrop-blur-sm rounded-full"
+            style={{
+              width: `${300 + i * 100}px`,
+              height: `${200 + i * 50}px`,
+              left: `${20 + i * 25}%`,
+              top: `${30 + i * 20}%`,
+              background: `rgba(${50 + i * 30}, ${100 + i * 20}, ${150 + i * 25}, 0.05)`
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.1, 0.2, 0.1],
+              borderRadius: ['50%', '30%', '50%']
+            }}
+            transition={{
+              duration: 15 + i * 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 2
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Light Mode Elements (transparent - no interference with full white background) */}
+      {/* The light mode background will be handled by the main container gradient */}
     </div>
   )
 }

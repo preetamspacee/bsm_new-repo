@@ -4,6 +4,9 @@ import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/components/providers/auth-provider'
+import { LenisProvider } from '@/components/providers/lenis-provider'
+import { ScrollProgressIndicator } from '@/components/ui/scroll-progress-indicator'
+import { ScrollPerformanceMonitor } from '@/components/ui/scroll-performance-monitor'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -29,7 +32,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
+            <LenisProvider>
+              <ScrollProgressIndicator />
+              <ScrollPerformanceMonitor />
+              {children}
+            </LenisProvider>
             <Toaster
               position="top-right"
               toastOptions={{

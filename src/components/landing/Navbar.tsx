@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Menu, X, Shield } from 'lucide-react'
+import { BSMLogo } from '@/components/ui/bsm-logo'
+import { Menu, X } from 'lucide-react'
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -25,10 +26,8 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="p-2 bg-primary rounded-lg">
-              <Shield className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">BSM</span>
+            <BSMLogo size={32} />
+            <span className="text-xl font-bold text-gray-900 dark:text-white">BSM Platform</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -102,6 +101,11 @@ export function Navbar() {
     </nav>
   )
 }
+
+
+
+
+
 
 
 

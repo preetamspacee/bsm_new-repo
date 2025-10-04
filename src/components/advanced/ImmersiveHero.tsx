@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { useSpring as useReactSpring, animated } from '@react-spring/web'
-import { useGesture } from '@use-gesture/react'
-import { ArrowRight, Play, Zap, Shield, Users, BarChart3 } from 'lucide-react'
+import { motion, useMotionValue, useSpring, useScroll, useTransform } from 'framer-motion'
+import { ArrowRight, Zap, Shield, Users, BarChart3 } from 'lucide-react'
+
 
 export function ImmersiveHero() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -17,15 +16,22 @@ export function ImmersiveHero() {
   
   const springX = useSpring(mouseX, { stiffness: 150, damping: 15 })
   const springY = useSpring(mouseY, { stiffness: 150, damping: 15 })
-  
-  // Removed 3D rotation transforms to eliminate tilting
 
-  // Morphing text content
+  // Scroll-based animation for masked text
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start end', 'end start']
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '-30%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [1, 1, 1, 0]);
+
+  // Updated text content to match screenshots
   const morphingTexts = [
-    "Deliver Exceptional Customer Service",
-    "Transform Your Business Operations", 
-    "Empower Your Team with AI",
-    "Scale Your Service Management"
+    "Integrate advanced workflow automation, AI-powered smart handling, and real-time analytics to transform your business service management.",
+    "Integrate innovative automation, intelligent solutions, and comprehensive analytics to revolutionize your service management.",
+    "Embrace cutting-edge AI, seamless automation, and powerful insights to elevate your business operations.",
+    "Transform your operations with advanced AI, automated workflows, and real-time analytics."
   ]
 
   // Mouse tracking for 3D effects
@@ -45,51 +51,54 @@ export function ImmersiveHero() {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [mouseX, mouseY])
 
-  // Text morphing animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveText((prev) => (prev + 1) % morphingTexts.length)
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
+  // Simplified - no text morphing for faster loading
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setActiveText((prev) => (prev + 1) % morphingTexts.length)
+  //   }, 3000)
+  //   return () => clearInterval(interval)
+  // }, [])
 
-  // Magnetic Button Component with Hover Effects
+  // Simplified Magnetic Button Component
   function MagneticButton({ children, onClick, variant = 'primary' }: { 
     children: React.ReactNode, 
     onClick: () => void,
     variant?: 'primary' | 'secondary'
   }) {
-    const [isHovered, setIsHovered] = useState(false)
     const buttonRef = useRef<HTMLButtonElement>(null)
 
-    const bind = useGesture({
-      onHover: ({ hovering }) => setIsHovered(hovering ?? false),
-      onMove: ({ xy: [x, y] }) => {
-        if (buttonRef.current && isHovered) {
-          const rect = buttonRef.current.getBoundingClientRect()
-          const centerX = rect.left + rect.width / 2
-          const centerY = rect.top + rect.height / 2
-          const deltaX = (x - centerX) * 0.15
-          const deltaY = (y - centerY) * 0.15
-          
-          buttonRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.05)`
-        }
-      },
-      onMoveEnd: () => {
-        if (buttonRef.current) {
-          buttonRef.current.style.transform = 'translate(0px, 0px) scale(1)'
-        }
+    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!buttonRef.current) return
+      
+      const rect = buttonRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      const centerX = rect.width / 2
+      const centerY = rect.height / 2
+      
+      const deltaX = (x - centerX) * 0.1
+      const deltaY = (y - centerY) * 0.1
+      
+      buttonRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.02)`
+    }
+
+    const handleMouseLeave = () => {
+      if (buttonRef.current) {
+        buttonRef.current.style.transform = 'translate(0px, 0px) scale(1)'
       }
-    })
+    }
 
     return (
       <motion.button
         ref={buttonRef}
         onClick={onClick}
-        className={`relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden group ${
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className={`relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden group transition-all duration-300 ${
           variant === 'primary' 
-            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
-            : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20'
+            ? 'bg-gradient-to-r from-[#00C3FF] to-[#3E6FF6] text-white shadow-lg hover:shadow-xl hover:shadow-[#00C3FF]/25' 
+            : 'bg-white dark:bg-[#1C1F2D]/80 border border-gray-200/50 dark:border-[#2A2E39] text-gray-900 dark:text-[#F5F5F7] hover:bg-gray-50 dark:hover:bg-[#1C1F2D] shadow-md'
         }`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -97,49 +106,10 @@ export function ImmersiveHero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.8 }}
       >
-        {children}
+        <span className="relative z-10">{children}</span>
         
-        {/* Liquid Fill Effect */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0"
-          animate={{ opacity: isHovered ? 0.2 : 0 }}
-          transition={{ duration: 0.3 }}
-        />
-        
-        {/* Particle Explosion on Click */}
-        <AnimatePresence>
-          {isHovered && (
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {Array.from({ length: 12 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-2 h-2 bg-cyan-400 rounded-full"
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                  }}
-                  animate={{
-                    x: [0, Math.cos((i * 30 * Math.PI) / 180) * 50],
-                    y: [0, Math.sin((i * 30 * Math.PI) / 180) * 50],
-                    opacity: [1, 0],
-                    scale: [1, 0],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    delay: i * 0.05,
-                    repeat: Infinity,
-                    repeatDelay: 3
-                  }}
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Subtle shimmer effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-x-full group-hover:translate-x-full" />
       </motion.button>
     )
   }
@@ -205,181 +175,158 @@ export function ImmersiveHero() {
   }
 
   return (
-    <section 
+    <section
       ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{
-        // Removed perspective to eliminate 3D effects
-      }}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#f9fafc] to-[#eef2f9] dark:bg-gradient-to-br dark:from-[#0F1421] dark:via-[#131722] dark:to-[#0F1421] transition-colors duration-300"
     >
+
       {/* Transform Container */}
       <motion.div
         className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
-        style={{
-          // Removed 3D transforms to eliminate tilting
-        }}
       >
         <div className="max-w-5xl mx-auto">
-          {/* Badge with Holographic Effect */}
+          {/* Updated Badge */}
           <motion.div
-            className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-md border border-blue-400/30 mb-8"
+            className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-md border border-blue-200/20 dark:border-blue-800/20 mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             whileHover={{ scale: 1.05 }}
           >
             <motion.div
-              className="w-3 h-3 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full mr-3"
+              className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mr-2"
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.7, 1, 0.7]
               }}
               transition={{ duration: 2, repeat: Infinity }}
             />
-            <span className="text-cyan-400 font-medium text-sm">
-              🚀 Next-Generation BSM Platform
+            <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
+              🚀 Next-Gen AI Technology
             </span>
           </motion.div>
 
-          {/* Morphing Headline */}
-          <div className="mb-8 h-24 flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              <motion.h1
-                key={activeText}
-                className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight"
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -50 }}
-                transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
-                style={{ transformOrigin: "center bottom" }}
-              >
-                <KineticText 
-                  text={morphingTexts[activeText]} 
-                  className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent"
-                />
-              </motion.h1>
-            </AnimatePresence>
-          </div>
-
-          {/* Subheadline with Liquid Effect */}
-          <motion.p
-            className="text-xl md:text-2xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            whileHover={{
-              color: "#FFFFFF",
-              textShadow: "0 0 30px rgba(0, 255, 255, 0.5)"
-            }}
-          >
-            Integrate advanced workflow automation, AI-powered ticket handling, 
-            and real-time analytics to transform your business service management.
-          </motion.p>
+         {/* Main Headline with Image Mask Effect */}
+         <motion.h1
+           className="text-5xl md:text-7xl font-bold leading-tight mb-6 relative"
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.8 }}
+           style={{
+             backgroundImage: 'linear-gradient(45deg, #00C3FF 0%, #3E6FF6 25%, #8B5CF6 50%, #F59E0B 75%, #10B981 100%)',
+             backgroundSize: '400% 400%',
+             WebkitBackgroundClip: 'text',
+             WebkitTextFillColor: 'transparent',
+             backgroundClip: 'text',
+             color: 'transparent',
+             filter: 'contrast(1.3) brightness(1.2) saturate(1.1)',
+             letterSpacing: '-0.02em',
+             textShadow: '0 0 40px rgba(0,0,0,0.4)',
+             animation: 'gradientShift 6s ease infinite'
+           }}
+         >
+           Scale with enterprise grade security
+           
+           {/* Electric blue underline effect */}
+           <motion.div
+             className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-[#00C3FF] via-[#3E6FF6] to-[#00C3FF] rounded-full dark:opacity-80"
+             initial={{ scaleX: 0 }}
+             animate={{ scaleX: 1 }}
+             transition={{ duration: 1.5, delay: 0.5 }}
+             whileHover={{ scaleX: 1.05 }}
+           />
+         </motion.h1>
+         
+         <motion.p
+           className="text-xl md:text-2xl text-gray-700 dark:text-[#848E9C] mb-12 max-w-3xl mx-auto transition-colors duration-300"
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.8, delay: 0.2 }}
+         >
+           Connect work to goals and automate workflows with AI as your teammate.
+         </motion.p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <MagneticButton
-              onClick={() => window.location.href = '/admin/dashboard'}
+              onClick={() => window.location.href = '/auth/signup'}
               variant="primary"
             >
               <span className="flex items-center">
-                Access Admin Dashboard
+                Get Started
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </span>
             </MagneticButton>
-            
+
             <MagneticButton
-              onClick={() => window.location.href = '/customer/dashboard'}
+              onClick={() => window.location.href = '/auth/login'}
               variant="secondary"
             >
               <span className="flex items-center">
-                <Play className="mr-2 h-5 w-5" />
-                Go to Customer Portal
+                Try For Free >
               </span>
             </MagneticButton>
           </div>
+          
+          <p className="text-sm text-gray-600 dark:text-white/60 mb-16 transition-colors duration-300">
+            * No credit card required. Free 1 month trial
+          </p>
 
-          {/* Stats with Living Animations */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-20">
             {[
-              { icon: Shield, value: "15,000+", label: "Lines of Code", color: "from-blue-400 to-cyan-400" },
-              { icon: Users, value: "200+", label: "Components", color: "from-purple-400 to-pink-400" },
-              { icon: BarChart3, value: "50+", label: "Core Features", color: "from-green-400 to-emerald-400" },
-              { icon: Zap, value: "10+", label: "Integrations", color: "from-yellow-400 to-orange-400" }
+              { icon: Users, value: "10k+", label: "Companies", color: "from-blue-500 to-blue-600" },
+              { icon: Shield, value: "99.9%", label: "Uptime", color: "from-green-500 to-green-600" },
+              { icon: Zap, value: "24/7", label: "Support", color: "from-purple-500 to-purple-600" },
+              { icon: BarChart3, value: "$2M+", label: "Revenue", color: "from-orange-500 to-orange-600" }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
-                className="text-center group"
+                className="text-center group bg-white dark:bg-[#1C1F2D] rounded-2xl p-6 shadow-md shadow-gray-200/60 dark:shadow-[#0F1421]/50 border border-gray-100 dark:border-[#2A2E39] hover:shadow-lg hover:scale-[1.01] dark:hover:shadow-[#00C3FF]/20 transition-all duration-500 hover:-translate-y-1"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
                 whileHover={{ scale: 1.05, y: -5 }}
               >
                 <motion.div
-                  className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-md border border-white/20"
-                  whileHover={{ scale: 1.1 }}
+                  className="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#00C3FF]/10 to-[#3E6FF6]/10 dark:from-[#00C3FF]/20 dark:to-[#3E6FF6]/20 border border-[#00C3FF]/20 dark:border-[#00C3FF]/20"
+                  whileHover={{ scale: 1.1, rotate: 360 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <stat.icon className="h-8 w-8 text-white" />
+                  <stat.icon className="h-6 w-6 text-blue-600 dark:text-[#00C3FF] transition-colors duration-300" />
                 </motion.div>
                 
                 <motion.div
-                  className={`text-3xl md:text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-2`}
+                  className="text-3xl md:text-4xl font-bold mb-2"
+                  style={{
+                    background: 'linear-gradient(45deg, #3B82F6, #8B5CF6, #3B82F6)',
+                    backgroundSize: '200% 200%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
                   animate={{
                     backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
                   }}
-                  transition={{ duration: 3, repeat: Infinity }}
+                  transition={{
+                    backgroundPosition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                    scale: { duration: 0.3 }
+                  }}
+                  whileHover={{ scale: 1.05 }}
                 >
                   {stat.value}
                 </motion.div>
                 
-                <div className="text-gray-400 text-sm font-medium">
+                <div className="text-gray-600 dark:text-[#848E9C] text-sm font-medium transition-colors duration-300 group-hover:text-gray-800 dark:group-hover:text-[#F5F5F7]">
                   {stat.label}
                 </div>
-                
-                {/* Pulse Effect */}
-                <motion.div
-                  className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0"
-                  animate={{ opacity: [0, 0.3, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: index * 0.5 }}
-                />
               </motion.div>
             ))}
           </div>
         </div>
       </motion.div>
 
-      {/* Energy Orbs */}
-      <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <EnergyOrb key={i} delay={i * 0.2} />
-        ))}
-      </div>
-
-      {/* Circuit Board Activation */}
-      <div className="absolute inset-0 pointer-events-none">
-        <svg className="w-full h-full opacity-20">
-          {Array.from({ length: 15 }).map((_, i) => (
-            <motion.path
-              key={i}
-              d={`M ${Math.random() * 100}%,${Math.random() * 100}% L ${Math.random() * 100}%,${Math.random() * 100}%`}
-              stroke="#00FFFF"
-              strokeWidth="2"
-              fill="none"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{
-                duration: 2,
-                delay: i * 0.2,
-                repeat: Infinity,
-                repeatDelay: 3
-              }}
-            />
-          ))}
-        </svg>
-      </div>
-
-      {/* Scroll Indicator with Magnetic Effect */}
+      {/* Clean Scroll Indicator */}
       <motion.div
         className="absolute bottom-8 left-1/2 transform -translate-x-1/2 cursor-pointer"
         animate={{ y: [0, 10, 0] }}
@@ -387,10 +334,10 @@ export function ImmersiveHero() {
         whileHover={{ scale: 1.2 }}
         onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
       >
-        <div className="w-8 h-12 border-2 border-white/30 rounded-full flex justify-center">
+        <div className="w-6 h-10 border-2 border-gray-300/30 dark:border-white/30 rounded-full flex justify-center">
           <motion.div
-            className="w-1 h-4 bg-white/60 rounded-full mt-2"
-            animate={{ y: [0, 12, 0] }}
+            className="w-1 h-3 bg-gray-400/60 dark:bg-white/60 rounded-full mt-2"
+            animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
         </div>
