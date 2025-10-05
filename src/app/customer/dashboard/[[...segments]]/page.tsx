@@ -289,7 +289,7 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-hidden flex flex-col">
       {/* Header */}
       <header className="bg-white border-b shadow-sm">
         <div className="px-6 py-4">
@@ -374,7 +374,7 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
       )}
 
       {/* Content Area */}
-      <div className="p-6">
+      <div className="p-6 overflow-y-auto scrollable flex-1">
         {activeTab === 'dashboard' && <DashboardContent data={customerData} />}
         {activeTab === 'tickets' && <TicketsContent subTab={activeSubTab} />}
         {activeTab === 'ratings' && <RatingsContent subTab={activeSubTab} />}
@@ -943,7 +943,7 @@ function TicketsContent({ subTab }: { subTab: string }) {
 
       {selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollable">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">{selectedTicket.title}</h2>
               <Button variant="ghost" onClick={() => setSelectedTicket(null)}>
@@ -977,7 +977,7 @@ function TicketsContent({ subTab }: { subTab: string }) {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollable">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Create New Ticket</h2>
               <Button variant="ghost" onClick={() => setShowCreateModal(false)}>

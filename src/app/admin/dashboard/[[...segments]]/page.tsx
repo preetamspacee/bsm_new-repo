@@ -110,6 +110,7 @@ export default function AdminDashboardPage() {
   const activeSubTab = segments[1] || ''
   
   const [loading, setLoading] = useState(false)
+  const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({})
   const [dashboardData, setDashboardData] = useState({
     todayTickets: Math.floor(Math.random() * 20) + 10,
     resolvedToday: Math.floor(Math.random() * 15) + 8,
@@ -214,6 +215,16 @@ export default function AdminDashboardPage() {
     ]
   }
 
+  // Auto-expand menu when navigating to a sub-tab
+  useEffect(() => {
+    if (activeTab && activeSubTab) {
+      setExpandedMenus(prev => ({
+        ...prev,
+        [activeTab]: true
+      }))
+    }
+  }, [activeTab, activeSubTab])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -225,20 +236,29 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
+      <div className="w-64 bg-white shadow-lg flex flex-col">
         <div className="p-6">
           <h1 className="text-xl font-bold text-gray-900">BSM Platform</h1>
           <p className="text-sm text-gray-600">Admin Dashboard</p>
         </div>
         
-        <nav className="mt-6">
+        <nav className="mt-6 flex-1 overflow-y-auto scrollable">
           {tabs.map((tab: any) => {
             const Icon = tab.icon
             return (
               <div key={tab.id}>
                 <button
                   onClick={() => {
-                    router.push(`/admin/dashboard/${tab.id}`)
+                    if (subTabs[tab.id as keyof typeof subTabs]) {
+                      // Toggle submenu expansion
+                      setExpandedMenus(prev => ({
+                        ...prev,
+                        [tab.id]: !prev[tab.id]
+                      }))
+                    } else {
+                      // Navigate to main tab
+                      router.push(`/admin/dashboard/${tab.id}`)
+                    }
                   }}
                   className={`w-full flex items-center px-6 py-3 text-left hover:bg-gray-50 ${
                     activeTab === tab.id ? 'bg-blue-50 border-r-2 border-blue-500 text-blue-700' : 'text-gray-700'
@@ -246,13 +266,19 @@ export default function AdminDashboardPage() {
                 >
                   <Icon className="h-5 w-5 mr-3" />
                   {tab.label}
-                  {activeTab === tab.id && subTabs[tab.id as keyof typeof subTabs] && (
-                    <ChevronDown className="h-4 w-4 ml-auto" />
+                  {subTabs[tab.id as keyof typeof subTabs] && (
+                    <div className="ml-auto">
+                      {expandedMenus[tab.id] ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </div>
                   )}
                 </button>
                 
                 {/* Sub-tabs */}
-                {activeTab === tab.id && subTabs[tab.id as keyof typeof subTabs] && (
+                {expandedMenus[tab.id] && subTabs[tab.id as keyof typeof subTabs] && (
                   <div className="bg-gray-50">
                     {subTabs[tab.id as keyof typeof subTabs].map((subTab: any) => (
                       <button
@@ -302,7 +328,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-6 overflow-y-auto scrollable">
           {activeTab === 'dashboard' && <DashboardContent data={dashboardData} />}
           {activeTab === 'tickets' && <TicketsContent subTab={activeSubTab} />}
           {activeTab === 'users' && <UsersContent subTab={activeSubTab} />}
