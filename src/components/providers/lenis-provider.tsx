@@ -85,18 +85,12 @@ export function LenisProvider({ children }: LenisProviderProps) {
   useEffect(() => {
     // Initialize Lenis with optimized settings for better performance
     const lenis = new Lenis({
-      duration: 0.8, // Reduced duration for snappier response
-      easing: (t) => 1 - Math.pow(1 - t, 3), // Cubic ease-out for smoother feel
-      direction: 'vertical',
-      gestureDirection: 'vertical',
-      smooth: true,
-      mouseMultiplier: 0.8, // Reduced for more control
-      smoothTouch: true, // Enable smooth touch for mobile
-      touchMultiplier: 1.5, // Optimized for touch devices
+      duration: 0.8,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
+      touchMultiplier: 1.5,
       infinite: false,
-      lerp: 0.1, // Smoother interpolation
-      wheelMultiplier: 1, // Standard wheel sensitivity
-      touchInertiaMultiplier: 50, // Better touch inertia
+      lerp: 0.1,
+      wheelMultiplier: 1,
     });
 
     // Store global instance

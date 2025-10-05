@@ -329,3 +329,8 @@ export function NodePalette({ onAddNode, className }: NodePaletteProps) {
 }
 
 
+
+
+
+
+

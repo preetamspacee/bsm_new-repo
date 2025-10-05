@@ -58,7 +58,7 @@ export function ScrollAnimation({
 
   return (
     <div 
-      ref={elementRef}
+      ref={elementRef as React.RefObject<HTMLDivElement>}
       className={`${getAnimationClass()} ${className}`}
     >
       {children}

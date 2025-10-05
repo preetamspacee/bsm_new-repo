@@ -37,6 +37,7 @@ interface Ticket {
   created_by: string
   created_at: string
   updated_at: string
+  resolved_at?: string
   tags: string[]
   attachments: string[]
   sla_deadline?: string
@@ -432,5 +433,6 @@ export function TicketManagement({ className }: TicketManagementProps) {
     </div>
   )
 }
+
 
 

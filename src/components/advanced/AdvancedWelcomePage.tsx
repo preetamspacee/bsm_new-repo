@@ -41,7 +41,7 @@ export function AdvancedWelcomePage() {
   useEffect(() => {
     const handleScroll = () => {
       const scrolled = window.pageYOffset
-      const parallax = document.querySelector('.parallax-background')
+      const parallax = document.querySelector('.parallax-background') as HTMLElement
       if (parallax) {
         parallax.style.transform = `translateY(${scrolled * 0.5}px)`
       }
@@ -466,7 +466,7 @@ export function AdvancedWelcomePage() {
                   icon: "🤖"
                 },
                 {
-                  title: "Real-time Analytics",
+                  title: "Advanced Reporting",
                   description: "Comprehensive insights and performance metrics for data-driven decisions",
                   icon: "📊"
                 },
@@ -558,8 +558,7 @@ export function AdvancedWelcomePage() {
               className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"
               animate={{
                 x: [0, -200, 200, 0],
-                y: [0, 100, -100, 0],
-                hover: [0, 180, 360]
+                y: [0, 100, -100, 0]
               }}
               transition={{ duration: 12, repeat: Infinity }}
             />
@@ -1200,11 +1199,6 @@ export function AdvancedWelcomePage() {
                     zIndex: 20,
                     boxShadow: "0 25px 50px rgba(139, 92, 246, 0.4)"
                   }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 20
-                  }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
@@ -1257,96 +1251,6 @@ export function AdvancedWelcomePage() {
           </div>
         </section>
 
-        {/* Dynamic Analytics Section */}
-        <section id="analytics" className="py-20 gpu-accelerated performance-hint">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              className="text-center mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94], type: "tween" }}
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-[#F5F5F7] mb-6 transition-colors duration-300">
-                Real-time Analytics
-              </h2>
-              <p className="text-xl text-gray-600 dark:text-[#848E9C] max-w-3xl mx-auto transition-colors duration-300">
-                Live performance metrics and insights powered by Supabase
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {analyticsData.slice(0, 4).map((metric, index) => (
-                <motion.div
-                  key={metric.id}
-                  className="bg-black/5 backdrop-blur-sm rounded-xl p-6 border border-white/3 text-center cursor-pointer transition-all duration-300 hover:bg-black/10 hover:border-white/8 hover:shadow-2xl hover:shadow-cyan-500/20"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.08, delay: index * 0.01, ease: [0.25, 0.46, 0.45, 0.94], type: "tween" }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  whileHover={{ 
-                    scale: 1.08, 
-                    y: -8,
-                    zIndex: 20,
-                    boxShadow: "0 25px 50px rgba(6, 182, 212, 0.4)"
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 20
-                  }}
-                >
-                  <motion.div 
-                    className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2"
-                    whileHover={{ 
-                      scale: 1.1,
-                      textShadow: "0 0 20px rgba(6, 182, 212, 0.5)"
-                    }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    {metric.metric_type === 'gauge' 
-                      ? metric.metric_value.toFixed(1)
-                      : metric.metric_value.toLocaleString()
-                    }
-                  </motion.div>
-                  <motion.div 
-                    className="text-gray-300 text-sm mb-2"
-                    whileHover={{ 
-                      color: "#ffffff",
-                      scale: 1.05
-                    }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    {metric.metric_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </motion.div>
-                  <motion.div 
-                    className="text-gray-500 text-xs"
-                    whileHover={{ 
-                      color: "#9ca3af",
-                      scale: 1.05
-                    }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    {metric.metric_type}
-                  </motion.div>
-                </motion.div>
-              ))}
-            </div>
-
-            {analyticsData.length === 0 && (
-              <motion.div
-                className="text-center py-12"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.02, duration: 0.08, type: "tween" }}
-              >
-                <div className="text-gray-400 text-lg">
-                  Loading analytics data...
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </section>
 
         {/* Enhanced Interactive Demo Section */}
         <section id="demo" className="py-20 bg-[#f5f7fb] dark:bg-transparent relative overflow-hidden">

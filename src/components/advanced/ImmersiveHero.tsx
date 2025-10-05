@@ -263,7 +263,7 @@ export function ImmersiveHero() {
               variant="secondary"
             >
               <span className="flex items-center">
-                Try For Free >
+                Try For Free &gt;
               </span>
             </MagneticButton>
           </div>

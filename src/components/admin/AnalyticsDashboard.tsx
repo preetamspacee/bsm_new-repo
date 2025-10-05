@@ -51,7 +51,7 @@ export function AnalyticsDashboard({ className }: AnalyticsDashboardProps) {
     { name: 'Other', count: 14, percentage: 11 }
   ]
 
-  const getTrendIcon = (trend: 'up' | 'down') => {
+  const getTrendIcon = (trend: string) => {
     return trend === 'up' ? 
       <TrendingUp className="h-3 w-3 text-green-500" /> : 
       <TrendingUp className="h-3 w-3 text-red-500 rotate-180" />
@@ -223,5 +223,6 @@ export function AnalyticsDashboard({ className }: AnalyticsDashboardProps) {
     </div>
   )
 }
+
 
 

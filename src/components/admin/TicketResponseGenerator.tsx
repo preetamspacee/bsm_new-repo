@@ -82,23 +82,17 @@ export function TicketResponseGenerator({
       Provide a professional, helpful response that addresses the customer's needs.
       `
       
-      const response = await aiService.makeRequest('models/gemini-pro:generateContent', {
-        contents: [{
-          parts: [{
-            text: fullPrompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 400,
-        }
+      const response = await aiService.generateResponse({
+        title: ticketData.title,
+        description: ticketData.description,
+        category: ticketData.category,
+        priority: ticketData.priority
       })
-
-      const generatedText = response.candidates[0].content.parts[0].text
-      setGeneratedResponse(generatedText)
+      
+      setGeneratedResponse(response)
       
       if (onResponseGenerated) {
-        onResponseGenerated(generatedText)
+        onResponseGenerated(response)
       }
       
       toast.success('Custom AI response generated!')
@@ -306,5 +300,6 @@ export function TicketResponseGenerator({
     </div>
   )
 }
+
 
 

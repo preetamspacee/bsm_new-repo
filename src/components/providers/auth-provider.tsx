@@ -65,7 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setTimeout(() => reject(new Error('Session check timeout')), 3000)
         )
         
-        const { data: { session: existingSession } } = await Promise.race([sessionPromise, timeoutPromise])
+        const result = await Promise.race([sessionPromise, timeoutPromise]) as any
+        const { data: { session: existingSession } } = result
         console.log('Existing session check:', existingSession?.user?.email)
         console.log('Session expires at:', existingSession?.expires_at ? new Date(existingSession.expires_at * 1000) : 'No expiration')
         
@@ -104,7 +105,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', authUser.id)
         .single();
       
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      const result = await Promise.race([queryPromise, timeoutPromise]) as any
+      const { data, error } = result
 
       console.log('User profile query completed!')
       console.log('User profile query result:', { data, error })
@@ -142,12 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             created_at: authUser.created_at,
             updated_at: authUser.updated_at || authUser.created_at,
             last_login: new Date().toISOString(),
-            is_active: true,
-            preferences: {},
-            company_id: null,
-            department: null,
-            phone: null,
-            timezone: 'UTC'
+            app_metadata: authUser.app_metadata,
+            user_metadata: authUser.user_metadata,
+            aud: authUser.aud
           }
           setUser(fallbackUser)
           setLoading(false)
@@ -203,12 +202,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         created_at: authUser.created_at,
         updated_at: authUser.updated_at || authUser.created_at,
         last_login: new Date().toISOString(),
-        is_active: true,
-        preferences: {},
-        company_id: null,
-        department: null,
-        phone: null,
-        timezone: 'UTC'
+        app_metadata: authUser.app_metadata,
+        user_metadata: authUser.user_metadata,
+        aud: authUser.aud
       }
       setUser(fallbackUser)
       setLoading(false)
@@ -222,44 +218,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('SignIn called with:', { email, role })
       
-      // Check if Supabase is configured
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        console.log('Supabase not configured, using mock authentication')
-        // Mock authentication for development
-        setUser({
-          id: 'mock-user-id',
-          email: email,
-          role: role,
-          full_name: role === 'admin' ? 'Admin User' : 'Customer User',
-          avatar_url: undefined,
-          is_verified: true,
-          last_login: new Date().toISOString(),
-          app_metadata: {},
-          user_metadata: {},
-          aud: 'authenticated',
-          created_at: new Date().toISOString(),
-        } as AuthUser)
-        toast.success('Successfully signed in! (Demo Mode)')
-        setLoading(false)
-        return Promise.resolve()
-      }
-      
+      // Try Supabase authentication first
       console.log('Attempting Supabase sign in with:', { email, role })
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      }, {
-        // Set longer session duration for admin users
-        ...(role === 'admin' && {
-          // Extend session to 24 hours for admin users
-          // This is handled by Supabase's JWT settings
-        })
       })
 
       if (error) {
         console.error('Supabase auth error:', error)
+        
+        // Only fall back to mock auth if it's a network/connection error, not invalid credentials
+        if (error.message.includes('network') || error.message.includes('connection') || error.message.includes('timeout')) {
+          console.log('Network error detected, using mock authentication')
+          setUser({
+            id: 'mock-user-id',
+            email: email,
+            role: role,
+            full_name: role === 'admin' ? 'Admin User' : 'Customer User',
+            avatar_url: undefined,
+            is_verified: true,
+            last_login: new Date().toISOString(),
+            app_metadata: {},
+            user_metadata: {},
+            aud: 'authenticated',
+            created_at: new Date().toISOString(),
+          } as AuthUser)
+          toast.success('Successfully signed in! (Demo Mode)')
+          setLoading(false)
+          return Promise.resolve()
+        }
+        
         toast.error(error.message || 'Invalid email or password')
+        setLoading(false)
         throw error
       }
 
@@ -284,7 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ...data.user,
             role: 'admin',
             full_name: 'Admin User',
-            avatar_url: null,
+            avatar_url: undefined,
             is_verified: true,
             last_login: new Date().toISOString(),
           })

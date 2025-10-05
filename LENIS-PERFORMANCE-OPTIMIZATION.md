@@ -157,3 +157,5 @@ The project includes a performance monitor (development only) that shows:
 
 *This optimization provides a significant improvement in scroll performance, making the BSM Platform feel more responsive and professional.*
 
+
+

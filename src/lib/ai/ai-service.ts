@@ -236,16 +236,14 @@ class AIService {
     customerHistory?: any[]
   }): Promise<AIInsights> {
     try {
-      const [sentiment, categorization, routing] = await Promise.all([
-        this.analyzeSentiment(ticketData.description),
-        this.autoCategorizeTicket(ticketData.title, ticketData.description),
-        this.suggestRouting({
-          title: ticketData.title,
-          description: ticketData.description,
-          category: categorization.category,
-          priority: categorization.priority
-        })
-      ])
+      const sentiment = await this.analyzeSentiment(ticketData.description)
+      const categorization = await this.autoCategorizeTicket(ticketData.title, ticketData.description)
+      const routing = await this.suggestRouting({
+        title: ticketData.title,
+        description: ticketData.description,
+        category: categorization.category,
+        priority: categorization.priority
+      })
 
       // Generate summary and suggested actions
       const summaryPrompt = `
@@ -397,7 +395,5 @@ class AIService {
 // Export singleton instance
 export const aiService = new AIService()
 
-// Export types
-export type { SentimentAnalysisResult, AutoCategorizationResult, IntelligentRoutingResult, AIInsights }
 
 
