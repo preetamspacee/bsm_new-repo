@@ -99,6 +99,17 @@ button:active, .btn:active, [role="button"]:active {
   transition: all 0.005s ease !important;
 }
 
+/* Magnetic button override - disable global transitions */
+.magnetic-button {
+  transition: none !important;
+  transform: translateZ(0) !important;
+  will-change: transform, opacity !important;
+}
+
+.magnetic-button:hover {
+  transition: none !important;
+}
+
 /* Reduce motion for better performance */
 @media (prefers-reduced-motion: reduce) {
   * {

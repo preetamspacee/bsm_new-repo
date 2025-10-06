@@ -40,10 +40,14 @@ function MagneticButton({ onClick, children, className = '' }: MagneticButtonPro
     <motion.button
       ref={buttonRef}
       onClick={onClick}
-      className={className}
+      className={`magnetic-button ${className}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      style={{ transition: 'transform 0.1s ease-out' }}
+      style={{ 
+        transition: 'none !important',
+        transform: 'translateZ(0)',
+        willChange: 'transform, opacity'
+      }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
