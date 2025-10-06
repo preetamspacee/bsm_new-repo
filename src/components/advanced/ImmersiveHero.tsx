@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Zap, Shield, Users, BarChart3 } from 'lucide-react'
-import SpiralAnimation from '../ui/spiral-animation'
 
 
 export function ImmersiveHero() {
@@ -186,31 +185,8 @@ export function ImmersiveHero() {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#f9fafc] to-[#eef2f9] dark:bg-black transition-colors duration-300"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#f9fafc] to-[#eef2f9] dark:bg-gradient-to-br dark:from-[#0F1421] dark:via-[#131722] dark:to-[#0F1421] transition-colors duration-300"
     >
-      {/* Spiral Animation Background - Only in Dark Mode */}
-      <div className="hidden dark:block absolute inset-0 z-0">
-        <SpiralAnimation
-          totalDots={400}
-          dotRadius={1.5}
-          duration={4}
-          backgroundColor="transparent"
-          margin={3}
-          minOpacity={0.2}
-          maxOpacity={0.8}
-          minScale={0.5}
-          maxScale={1.5}
-          useMultipleColors={true}
-          colors={[
-            { color: "#00C3FF" },
-            { color: "#3E6FF6" },
-            { color: "#8B5CF6" },
-            { color: "#06B6D4" },
-            { color: "#10B981" }
-          ]}
-          className="opacity-60"
-        />
-      </div>
 
       {/* Transform Container */}
       <motion.div
