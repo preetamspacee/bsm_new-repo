@@ -28,24 +28,19 @@
 
 1. **Go to your Vercel project dashboard**
 2. **Navigate to Settings → Environment Variables**
-3. **Add the following variables:**
+3. **Add the following variables (click "Add New" for each):**
 
-```bash
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+| Variable Name | Value | Environment |
+|---------------|-------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | Production, Preview, Development |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `your_supabase_anon_key` | Production, Preview, Development |
+| `SUPABASE_SERVICE_ROLE_KEY` | `your_supabase_service_role_key` | Production, Preview, Development |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `your_google_client_id` | Production, Preview, Development |
+| `GOOGLE_CLIENT_SECRET` | `your_google_client_secret` | Production, Preview, Development |
+| `GEMINI_API_KEY` | `your_gemini_api_key` | Production, Preview, Development |
+| `NEXT_PUBLIC_APP_URL` | `https://your-vercel-app.vercel.app` | Production, Preview, Development |
 
-# Google OAuth (Optional)
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Gemini AI (Optional)
-GEMINI_API_KEY=your_gemini_api_key
-
-# Application URL
-NEXT_PUBLIC_APP_URL=https://your-vercel-app.vercel.app
-```
+**Important:** Make sure to select **all three environments** (Production, Preview, Development) for each variable.
 
 ### Environment Variable Sources:
 
@@ -110,17 +105,38 @@ After database setup, use these credentials:
 
 ### Common Issues:
 
-1. **"supabaseUrl is required" Error:**
-   - Ensure environment variables are set in Vercel dashboard
-   - Redeploy after adding environment variables
+1. **"Environment Variable references Secret which does not exist" Error:**
+   - **Problem**: Vercel is looking for secrets instead of environment variables
+   - **Solution**: Remove the `vercel.json` file or ensure environment variables are set directly in Vercel dashboard
+   - **Fix**: Go to Vercel Dashboard → Settings → Environment Variables → Add variables manually
 
-2. **Authentication Issues:**
-   - Check Supabase site URL configuration
-   - Verify redirect URLs match your domain
+2. **"supabaseUrl is required" Error:**
+   - **Problem**: Environment variables not set in Vercel
+   - **Solution**: Add all required environment variables in Vercel dashboard
+   - **Check**: Ensure variables are set for Production, Preview, and Development
 
-3. **Database Connection Issues:**
-   - Ensure database scripts are run
-   - Check Supabase project status
+3. **Authentication Issues:**
+   - **Problem**: Supabase site URL not configured
+   - **Solution**: Update Supabase site URL to match your Vercel domain
+   - **Fix**: Supabase Dashboard → Authentication → Settings → Site URL
+
+4. **Database Connection Issues:**
+   - **Problem**: Database not set up or scripts not run
+   - **Solution**: Run database setup scripts in Supabase SQL Editor
+   - **Check**: Ensure Supabase project is active and accessible
+
+### Step-by-Step Fix for Environment Variable Error:
+
+1. **Go to Vercel Dashboard**
+2. **Select your project**
+3. **Go to Settings → Environment Variables**
+4. **Click "Add New"**
+5. **Add each variable one by one:**
+   - Name: `NEXT_PUBLIC_SUPABASE_URL`
+   - Value: `https://your-project.supabase.co`
+   - Environment: Select all (Production, Preview, Development)
+6. **Repeat for all variables**
+7. **Redeploy your project**
 
 ### Support:
 - Check Vercel deployment logs
