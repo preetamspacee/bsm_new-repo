@@ -59,63 +59,66 @@ export function ImmersiveHero() {
   //   return () => clearInterval(interval)
   // }, [])
 
-  // Simplified Magnetic Button Component
-  function MagneticButton({ children, onClick, variant = 'primary' }: { 
+  // Simple Button Component - No Magnetic Effect
+  function SimpleButton({ children, onClick, variant = 'primary' }: { 
     children: React.ReactNode, 
     onClick: () => void,
     variant?: 'primary' | 'secondary'
   }) {
-    const buttonRef = useRef<HTMLButtonElement>(null)
-
-    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!buttonRef.current) return
-      
-      const rect = buttonRef.current.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      
-      const centerX = rect.width / 2
-      const centerY = rect.height / 2
-      
-      const deltaX = (x - centerX) * 0.1
-      const deltaY = (y - centerY) * 0.1
-      
-      buttonRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.02)`
-    }
-
-    const handleMouseLeave = () => {
-      if (buttonRef.current) {
-        buttonRef.current.style.transform = 'translate(0px, 0px) scale(1)'
-      }
-    }
-
     return (
-      <motion.button
-        ref={buttonRef}
+      <button
         onClick={onClick}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        className={`magnetic-button relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden group ${
-          variant === 'primary' 
-            ? 'bg-gradient-to-r from-[#00C3FF] to-[#3E6FF6] text-white shadow-lg hover:shadow-xl hover:shadow-[#00C3FF]/25' 
-            : 'bg-white dark:bg-[#1C1F2D]/80 border border-gray-200/50 dark:border-[#2A2E39] text-gray-900 dark:text-[#F5F5F7] hover:bg-gray-50 dark:hover:bg-[#1C1F2D] shadow-md'
-        }`}
-        style={{ 
-          transition: 'none !important',
+        style={{
+          padding: '16px 32px',
+          borderRadius: '12px',
+          fontSize: '18px',
+          fontWeight: '600',
+          border: 'none',
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          background: variant === 'primary' 
+            ? 'linear-gradient(135deg, #00C3FF 0%, #3E6FF6 100%)'
+            : '#ffffff',
+          color: variant === 'primary' ? '#ffffff' : '#1f2937',
+          boxShadow: variant === 'primary' 
+            ? '0 10px 25px rgba(0, 195, 255, 0.3)'
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+          transition: 'all 0.2s ease',
           transform: 'translateZ(0)',
-          willChange: 'transform, opacity'
+          willChange: 'transform, box-shadow',
+          opacity: 1,
+          visibility: 'visible'
         }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.8 }}
+        onMouseEnter={(e) => {
+          const target = e.target as HTMLButtonElement
+          target.style.transform = 'translateZ(0) scale(1.05)'
+          target.style.boxShadow = variant === 'primary' 
+            ? '0 15px 35px rgba(0, 195, 255, 0.4)'
+            : '0 8px 20px rgba(0, 0, 0, 0.15)'
+        }}
+        onMouseLeave={(e) => {
+          const target = e.target as HTMLButtonElement
+          target.style.transform = 'translateZ(0) scale(1)'
+          target.style.boxShadow = variant === 'primary' 
+            ? '0 10px 25px rgba(0, 195, 255, 0.3)'
+            : '0 4px 12px rgba(0, 0, 0, 0.1)'
+        }}
+        onMouseDown={(e) => {
+          const target = e.target as HTMLButtonElement
+          target.style.transform = 'translateZ(0) scale(0.98)'
+        }}
+        onMouseUp={(e) => {
+          const target = e.target as HTMLButtonElement
+          target.style.transform = 'translateZ(0) scale(1.05)'
+        }}
       >
-        <span className="relative z-10">{children}</span>
-        
-        {/* Subtle shimmer effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-x-full group-hover:translate-x-full" />
-      </motion.button>
+        {children}
+      </button>
     )
   }
 
@@ -253,24 +256,19 @@ export function ImmersiveHero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <MagneticButton
+            <SimpleButton
               onClick={() => window.location.href = '/auth/signup'}
               variant="primary"
             >
-              <span className="flex items-center">
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </MagneticButton>
+              Get Started →
+            </SimpleButton>
 
-            <MagneticButton
+            <SimpleButton
               onClick={() => window.location.href = '/auth/login'}
               variant="secondary"
             >
-              <span className="flex items-center">
-                Try For Free &gt;
-              </span>
-            </MagneticButton>
+              Try For Free →
+            </SimpleButton>
           </div>
           
           <p className="text-sm text-gray-600 dark:text-white/60 mb-16 transition-colors duration-300">

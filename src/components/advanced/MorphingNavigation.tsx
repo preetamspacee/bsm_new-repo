@@ -11,48 +11,40 @@ interface MagneticButtonProps {
   className?: string
 }
 
-function MagneticButton({ onClick, children, className = '' }: MagneticButtonProps) {
-  const buttonRef = useRef<HTMLButtonElement>(null)
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!buttonRef.current) return
-    
-    const rect = buttonRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    
-    const deltaX = (x - centerX) * 0.1
-    const deltaY = (y - centerY) * 0.1
-    
-    buttonRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px)`
-  }
-
-  const handleMouseLeave = () => {
-    if (buttonRef.current) {
-      buttonRef.current.style.transform = 'translate(0px, 0px)'
-    }
-  }
-
+function SimpleButton({ onClick, children, className = '' }: MagneticButtonProps) {
   return (
-    <motion.button
-      ref={buttonRef}
+    <button
       onClick={onClick}
-      className={`magnetic-button ${className}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{ 
-        transition: 'none !important',
+      className={className}
+      style={{
+        padding: '8px 16px',
+        borderRadius: '8px',
+        fontSize: '14px',
+        fontWeight: '500',
+        border: 'none',
+        cursor: 'pointer',
+        background: 'transparent',
+        color: 'inherit',
+        transition: 'all 0.2s ease',
         transform: 'translateZ(0)',
-        willChange: 'transform, opacity'
+        opacity: 1,
+        visibility: 'visible'
       }}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      onMouseEnter={(e) => {
+        const target = e.target as HTMLButtonElement
+        target.style.transform = 'translateZ(0) scale(1.05)'
+        target.style.opacity = '1'
+        target.style.visibility = 'visible'
+      }}
+      onMouseLeave={(e) => {
+        const target = e.target as HTMLButtonElement
+        target.style.transform = 'translateZ(0) scale(1)'
+        target.style.opacity = '1'
+        target.style.visibility = 'visible'
+      }}
     >
       {children}
-    </motion.button>
+    </button>
   )
 }
 
@@ -95,12 +87,12 @@ export function MorphingNavigation() {
 
           {/* Theme Toggle & Login */}
           <div className="flex items-center space-x-4">
-            <MagneticButton
+            <SimpleButton
               onClick={() => window.location.href = '/auth/login'}
               className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-[#848E9C] hover:text-gray-900 dark:hover:text-[#F5F5F7] transition-colors duration-300"
             >
               Login
-            </MagneticButton>
+            </SimpleButton>
             <ThemeToggle />
           </div>
         </div>
