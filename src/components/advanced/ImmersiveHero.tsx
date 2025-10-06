@@ -186,20 +186,20 @@ export function ImmersiveHero() {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#f9fafc] to-[#eef2f9] dark:bg-gradient-to-br dark:from-[#0F1421] dark:via-[#131722] dark:to-[#0F1421] transition-colors duration-300"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#f9fafc] to-[#eef2f9] dark:bg-black transition-colors duration-300"
     >
       {/* Spiral Animation Background - Only in Dark Mode */}
       <div className="hidden dark:block absolute inset-0 z-0">
         <SpiralAnimation
-          totalDots={300}
-          dotRadius={1.2}
-          duration={5}
+          totalDots={400}
+          dotRadius={1.5}
+          duration={4}
           backgroundColor="transparent"
-          margin={4}
-          minOpacity={0.1}
-          maxOpacity={0.6}
-          minScale={0.4}
-          maxScale={1.3}
+          margin={3}
+          minOpacity={0.2}
+          maxOpacity={0.8}
+          minScale={0.5}
+          maxScale={1.5}
           useMultipleColors={true}
           colors={[
             { color: "#00C3FF" },
@@ -208,7 +208,7 @@ export function ImmersiveHero() {
             { color: "#06B6D4" },
             { color: "#10B981" }
           ]}
-          className="opacity-30"
+          className="opacity-60"
         />
       </div>
 
