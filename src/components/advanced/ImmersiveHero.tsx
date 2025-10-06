@@ -95,11 +95,12 @@ export function ImmersiveHero() {
         onClick={onClick}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className={`relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden group transition-all duration-300 ${
+        className={`relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden group transition-colors duration-300 ${
           variant === 'primary' 
             ? 'bg-gradient-to-r from-[#00C3FF] to-[#3E6FF6] text-white shadow-lg hover:shadow-xl hover:shadow-[#00C3FF]/25' 
             : 'bg-white dark:bg-[#1C1F2D]/80 border border-gray-200/50 dark:border-[#2A2E39] text-gray-900 dark:text-[#F5F5F7] hover:bg-gray-50 dark:hover:bg-[#1C1F2D] shadow-md'
         }`}
+        style={{ transition: 'transform 0.1s ease-out, box-shadow 0.3s ease' }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, y: 20 }}

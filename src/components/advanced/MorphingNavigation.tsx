@@ -43,6 +43,7 @@ function MagneticButton({ onClick, children, className = '' }: MagneticButtonPro
       className={className}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      style={{ transition: 'transform 0.1s ease-out' }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
