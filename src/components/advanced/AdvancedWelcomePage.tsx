@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Sun, Moon } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
+import { useTheme } from 'next-themes'
 import { QuantumBackground } from './QuantumBackground'
 import { MorphingNavigation } from './MorphingNavigation'
 import { ImmersiveHero } from './ImmersiveHero'
@@ -36,6 +37,13 @@ export function AdvancedWelcomePage() {
   const [isLoading, setIsLoading] = useState(false) // Professional fast loading
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null)
   const [isFeaturesHovered, setIsFeaturesHovered] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Ensure component is mounted before rendering theme-dependent content
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Professional scroll-based effects
   useEffect(() => {
@@ -223,6 +231,25 @@ export function AdvancedWelcomePage() {
 
       {/* Advanced Morphing Navigation */}
       <MorphingNavigation />
+      
+      {/* Theme Toggle Button */}
+      {mounted && (
+        <motion.button
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          className="fixed top-4 right-4 z-50 p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {theme === 'light' ? (
+            <Moon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+          ) : (
+            <Sun className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+          )}
+        </motion.button>
+      )}
       
       {/* Modern overlay for enhanced readability */}
       <div className="fixed inset-0 bg-gradient-to-br from-transparent via-gray-900/5 to-blue-900/10 pointer-events-none z-5" />
