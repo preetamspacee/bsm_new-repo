@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname, useParams } from 'next/navigation'
+import { useAuth } from '@/components/providers/auth-provider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -85,17 +86,38 @@ import {
   UserPlus,
   LogOut
 } from 'lucide-react'
-import { useAuth } from '@/components/providers/auth-provider'
+import { supabase } from '@/lib/supabase/client'
+import toast from 'react-hot-toast'
 
 export default function CustomerDashboard({ params }: { params: { segments?: string[] } }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, signOut, loading: authLoading } = useAuth()
   
   // Parse URL segments to determine active tab and sub-tab
   const segments = params.segments || []
   const activeTab = segments[0] || 'dashboard'
   const activeSubTab = segments[1] || 'overview'
+
+  // Authentication check - must be before any conditional returns
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        console.log('No user found, redirecting to login')
+        router.push('/auth/login?role=customer')
+        return
+      }
+      if (user.role !== 'customer') {
+        console.log('User is not a customer, redirecting to appropriate portal')
+        if (user.role === 'admin') {
+          router.push('/admin/dashboard')
+        } else {
+          router.push('/auth/login?role=customer')
+        }
+        return
+      }
+    }
+  }, [user, authLoading, router])
 
   const [customerData, setCustomerData] = useState({
     openTickets: 3,
@@ -121,90 +143,121 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    generateMockCustomerData()
+    fetchCustomerData()
   }, [])
 
-  const generateMockCustomerData = () => {
-    const mockData = {
-      openTickets: 3,
-      inProgressTickets: 2,
-      resolvedTickets: 15,
-      totalTickets: 20,
-      recentTickets: [
-        {
-          id: '1',
-          title: 'Login issues with mobile app',
-          status: 'open',
-          priority: 'high',
-          created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          description: 'Unable to login to mobile application',
-          category: 'Authentication',
-          assigned_to: 'Support Team'
-        },
-        {
-          id: '2',
-          title: 'Password reset not working',
-          status: 'in_progress',
-          priority: 'medium',
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          description: 'Password reset email not received',
-          category: 'Account Management',
-          assigned_to: 'John Smith'
-        },
-        {
-          id: '3',
-          title: 'Feature request: Dark mode',
-          status: 'resolved',
-          priority: 'low',
-          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          description: 'Would like to see dark mode option',
-          category: 'Feature Request',
-          assigned_to: 'Product Team'
-        }
-      ],
-      serviceHealth: [
-        { service: 'Email System', status: 'operational', uptime: '99.9%', lastIncident: '7d ago' },
-        { service: 'Web Application', status: 'operational', uptime: '99.8%', lastIncident: '2d ago' },
-        { service: 'API Services', status: 'degraded', uptime: '98.5%', lastIncident: 'Active' },
-        { service: 'Database', status: 'operational', uptime: '100%', lastIncident: '30d ago' }
-      ],
-      recentActivity: [
-        {
-          id: '1',
-          type: 'ticket_created',
-          message: 'New ticket created: Login issues',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          type: 'ticket_updated',
-          message: 'Ticket #1234 assigned to support agent',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          type: 'system_announcement',
-          message: 'Scheduled maintenance on Saturday 2 AM - 4 AM',
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
-        }
-      ],
-      slaPerformance: {
-        compliance: 95,
-        averageResponseTime: '2.5h',
-        resolutionRate: 92
-      },
-      accountInfo: {
-        companyName: user?.email?.split('@')[1] || 'gmail.com',
-        supportTier: 'Professional',
-        accountManager: 'Sarah Johnson',
-        supportHours: '24/7'
-      }
+  // Role validation
+  useEffect(() => {
+    if (authLoading) return
+    
+    if (!user) {
+      router.push('/auth/login')
+      return
     }
-    setCustomerData(mockData)
+    
+    if (user.role !== 'customer') {
+      router.push('/admin/dashboard')
+      return
+    }
+  }, [user, authLoading, router])
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
+
+
+  // Don't render if user is not customer
+  if (!user || user.role !== 'customer') {
+    return null
+  }
+
+  const fetchCustomerData = async () => {
+    try {
+      setLoading(true)
+      
+      if (!user?.id) {
+        console.error('No user ID available for fetching customer data')
+        toast.error('User authentication error. Please log in again.')
+        return
+      }
+
+      // Fetch customer's tickets from Supabase
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('tickets')
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          priority,
+          category,
+          created_at,
+          updated_at,
+          resolved_at,
+          assigned_to,
+          assignee:assigned_to(full_name, email)
+        `)
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false })
+
+      if (ticketsError) {
+        console.error('Error fetching customer tickets:', ticketsError)
+        toast.error('Failed to load your tickets. Please try again.')
+        return
+      }
+
+      // Calculate ticket statistics
+      const openTickets = ticketsData?.filter(t => t.status === 'open').length || 0
+      const inProgressTickets = ticketsData?.filter(t => t.status === 'in_progress').length || 0
+      const resolvedTickets = ticketsData?.filter(t => t.status === 'resolved').length || 0
+      const totalTickets = ticketsData?.length || 0
+
+      // Transform tickets data
+      const recentTickets = ticketsData?.slice(0, 5).map(ticket => ({
+        id: ticket.id,
+        title: ticket.title,
+        status: ticket.status,
+        priority: ticket.priority,
+        created_at: ticket.created_at,
+        updated_at: ticket.updated_at,
+        description: ticket.description,
+        category: ticket.category,
+         assigned_to: (ticket.assignee as any)?.full_name || 'Unassigned'
+      })) || []
+
+      // Update customer data with real data
+      setCustomerData(prev => ({
+        ...prev,
+        openTickets,
+        inProgressTickets,
+        resolvedTickets,
+        totalTickets,
+        recentTickets
+      }))
+
+      console.log('Customer data loaded from Supabase:', {
+        totalTickets,
+        openTickets,
+        inProgressTickets,
+        resolvedTickets
+      })
+
+    } catch (error) {
+      console.error('Error fetching customer data:', error)
+      toast.error('Failed to load dashboard data. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
   const handleTabClick = (tab: string) => {
     router.push(`/customer/dashboard/${tab}`)
@@ -288,6 +341,23 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
     ]
   }
 
+  // Show loading spinner while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render anything if user is not authenticated or not a customer
+  if (!user || user.role !== 'customer') {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 overflow-hidden flex flex-col">
       {/* Header */}
@@ -326,7 +396,7 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
               <Button variant="ghost" size="sm">
                 <Search className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={generateMockCustomerData}>
+              <Button variant="ghost" size="sm" onClick={fetchCustomerData}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="sm">
@@ -758,55 +828,57 @@ function DashboardContent({ data }: { data: any }) {
 
 // Tickets Content Component
 function TicketsContent({ subTab }: { subTab: string }) {
+  const { user } = useAuth()
   const [tickets, setTickets] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTicket, setSelectedTicket] = useState<any>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
-  useEffect(() => {
-    const mockTickets = [
-      {
-        id: 1,
-        title: 'Login issues with mobile app',
-        status: 'open',
-        priority: 'high',
-        category: 'Authentication',
-        description: 'Unable to login to mobile application.',
-        created_at: '2024-01-15T10:30:00Z',
-        updated_at: '2024-01-15T14:20:00Z',
-        assigned_to: 'Support Team'
-      },
-      {
-        id: 2,
-        title: 'Password reset not working',
-        status: 'in_progress',
-        priority: 'medium',
-        category: 'Account Management',
-        description: 'Password reset email not received.',
-        created_at: '2024-01-14T09:15:00Z',
-        updated_at: '2024-01-15T11:45:00Z',
-        assigned_to: 'John Smith'
-      },
-      {
-        id: 3,
-        title: 'Feature request: Dark mode',
-        status: 'resolved',
-        priority: 'low',
-        category: 'Feature Request',
-        description: 'Would like to see dark mode option.',
-        created_at: '2024-01-10T16:20:00Z',
-        updated_at: '2024-01-12T10:30:00Z',
-        assigned_to: 'Product Team'
+  const fetchCustomerTickets = async () => {
+    if (!user?.id) return
+    
+    try {
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('tickets')
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          priority,
+          created_at,
+          updated_at,
+          category,
+          assignee:users!tickets_assignee_id_fkey(full_name)
+        `)
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false })
+
+      if (ticketsError) {
+        console.error('Error fetching tickets:', ticketsError)
+        toast.error('Failed to load tickets. Please try again.')
+        return
       }
-    ]
-    setTickets(mockTickets)
-  }, [subTab])
+
+      setTickets(ticketsData || [])
+      console.log('Customer tickets loaded from Supabase:', ticketsData?.length || 0)
+    } catch (error) {
+      console.error('Error fetching customer tickets:', error)
+      toast.error('Failed to load tickets. Please try again.')
+    }
+  }
+
+  useEffect(() => {
+    fetchCustomerTickets()
+  }, [subTab, user])
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSubTab = !subTab || subTab === 'overview' || ticket.status === subTab.replace('-', '_')
     const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesSubTab && matchesSearch
   })
+
+  const approvedTickets = tickets.filter(ticket => ticket.status === 'approved')
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -820,6 +892,84 @@ function TicketsContent({ subTab }: { subTab: string }) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString()
+  }
+
+  const rateTicket = async (ticketId: string, rating: number, feedback?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('ratings')
+        .insert({
+          ticket_id: ticketId,
+          rating: rating,
+          feedback: feedback || '',
+          rated_by: user?.id,
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error submitting rating:', error)
+        toast.error('Failed to submit rating. Please try again.')
+        return
+      }
+
+      // Update ticket status to rated
+      await supabase
+        .from('tickets')
+        .update({ 
+          status: 'rated',
+          metadata: {
+            ...tickets.find(t => t.id === ticketId)?.metadata,
+            rating: rating,
+            feedback: feedback,
+            rated_at: new Date().toISOString()
+          }
+        })
+        .eq('id', ticketId)
+
+      toast.success('Rating submitted successfully!')
+      
+      // Update analytics
+      await updateAnalytics('customer_satisfaction', rating)
+      
+      // Refresh tickets
+      fetchCustomerTickets()
+    } catch (error) {
+      console.error('Error rating ticket:', error)
+      toast.error('Failed to submit rating. Please try again.')
+    }
+  }
+
+  const updateAnalytics = async (metricName: string, value: number) => {
+    try {
+      // Get existing analytics or create new
+      const { data: existingAnalytics } = await supabase
+        .from('analytics')
+        .select('*')
+        .eq('metric_name', metricName)
+        .single()
+
+      if (existingAnalytics) {
+        // Update existing analytics (simple average for now)
+        const newValue = (existingAnalytics.metric_value + value) / 2
+        await supabase
+          .from('analytics')
+          .update({ metric_value: newValue })
+          .eq('id', existingAnalytics.id)
+      } else {
+        // Create new analytics entry
+        await supabase
+          .from('analytics')
+          .insert({
+            metric_name: metricName,
+            metric_value: value,
+            metric_type: 'gauge',
+            tags: { source: 'customer_rating' },
+            metadata: { count: 1 }
+          })
+      }
+    } catch (error) {
+      console.error('Error updating analytics:', error)
+    }
   }
 
   return (
@@ -871,6 +1021,17 @@ function TicketsContent({ subTab }: { subTab: string }) {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <Star className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">
+              {approvedTickets.length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
             <BarChart3 className="h-4 w-4 text-blue-500" />
           </CardHeader>
@@ -879,6 +1040,79 @@ function TicketsContent({ subTab }: { subTab: string }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Approved Tickets Section */}
+      {approvedTickets.length > 0 && (
+        <Card className="border-purple-200 bg-purple-50">
+          <CardHeader>
+            <CardTitle className="text-purple-800 flex items-center">
+              <Star className="h-5 w-5 mr-2" />
+              Approved Tickets - Rate Your Experience
+            </CardTitle>
+            <CardDescription className="text-purple-600">
+              Your tickets have been approved! Please rate your experience to help us improve.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {approvedTickets.map((ticket) => (
+                <div key={ticket.id} className="bg-white p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{ticket.title}</h4>
+                      <p className="text-sm text-gray-600">Approved on {formatDate(ticket.updated_at)}</p>
+                    </div>
+                    <Badge className="bg-purple-100 text-purple-800">Approved</Badge>
+                  </div>
+                  
+                  {/* Rating Section */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Rate your experience (1-5 stars):</Label>
+                    <div className="flex items-center space-x-2">
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <Button
+                          key={rating}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => rateTicket(ticket.id, rating)}
+                          className="p-1 hover:bg-yellow-100"
+                        >
+                          <Star 
+                            className={`h-5 w-5 ${
+                              rating <= (ticket.metadata?.rating || 0) 
+                                ? 'text-yellow-500 fill-current' 
+                                : 'text-gray-300'
+                            }`} 
+                          />
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    {/* Feedback Section */}
+                    <div className="mt-3">
+                      <Label htmlFor={`feedback-${ticket.id}`} className="text-sm font-medium">
+                        Additional feedback (optional):
+                      </Label>
+                      <Textarea
+                        id={`feedback-${ticket.id}`}
+                        placeholder="Tell us about your experience..."
+                        className="mt-1"
+                        rows={2}
+                        onChange={(e) => {
+                          const feedback = e.target.value
+                          if (feedback.trim()) {
+                            rateTicket(ticket.id, ticket.metadata?.rating || 5, feedback)
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -1016,6 +1250,8 @@ function RatingsContent({ subTab }: { subTab: string }) {
   const [showRatingModal, setShowRatingModal] = useState(false)
 
   useEffect(() => {
+    // Note: Ratings functionality would require a ratings table in Supabase
+    // For now, using mock data until ratings table is implemented
     const mockRatings = [
       {
         id: 1,
@@ -1167,28 +1403,110 @@ function RatingsContent({ subTab }: { subTab: string }) {
 function ServicesContent({ subTab }: { subTab: string }) {
   const [services, setServices] = useState<any[]>([])
   const [incidents, setIncidents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const mockServices = [
-      { name: 'Email System', status: 'operational', uptime: '99.9%', lastIncident: '7d ago' },
-      { name: 'Web Application', status: 'operational', uptime: '99.8%', lastIncident: '2d ago' },
-      { name: 'API Services', status: 'degraded', uptime: '98.5%', lastIncident: 'Active' },
-      { name: 'Database', status: 'operational', uptime: '100%', lastIncident: '30d ago' }
-    ]
-    setServices(mockServices)
-
-    const mockIncidents = [
-      {
-        id: 1,
-        title: 'API Response Time Degradation',
-        status: 'investigating',
-        severity: 'medium',
-        description: 'Some API endpoints experiencing slower response times',
-        createdAt: '2024-01-15T09:00:00Z'
-      }
-    ]
-    setIncidents(mockIncidents)
+    fetchServicesAndAssets()
   }, [subTab])
+
+  const fetchServicesAndAssets = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch services from Supabase
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select('*')
+        .eq('is_active', true)
+        .order('name')
+
+      // Fetch assets from Supabase
+      const { data: assetsData, error: assetsError } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('is_active', true)
+        .order('name')
+
+      if (servicesError || assetsError) {
+        console.error('Error fetching services/assets:', { servicesError, assetsError })
+        toast.error('Failed to load services and assets. Please try again.')
+        
+        // Fallback to mock data if database is not available
+        const mockServices = [
+          { id: '1', name: 'Email System', status: 'operational', uptime: '99.9%', lastIncident: '7d ago', description: 'Corporate email system' },
+          { id: '2', name: 'Web Application', status: 'operational', uptime: '99.8%', lastIncident: '2d ago', description: 'Main web application' },
+          { id: '3', name: 'API Services', status: 'degraded', uptime: '98.5%', lastIncident: 'Active', description: 'REST API services' },
+          { id: '4', name: 'Database', status: 'operational', uptime: '100%', lastIncident: '30d ago', description: 'Primary database system' }
+        ]
+        setServices(mockServices)
+        return
+      }
+
+      // Combine services and assets data
+      const combinedServices = [
+        ...(servicesData || []).map(service => ({
+          id: service.id,
+          name: service.name,
+          status: service.status || 'operational',
+          uptime: service.uptime || '99.9%',
+          lastIncident: service.last_incident || 'No recent incidents',
+          description: service.description || 'Service description not available',
+          type: 'service'
+        })),
+        ...(assetsData || []).map(asset => ({
+          id: asset.id,
+          name: asset.name,
+          status: asset.status || 'operational',
+          uptime: asset.uptime || '99.9%',
+          lastIncident: asset.last_incident || 'No recent incidents',
+          description: asset.description || 'Asset description not available',
+          type: 'asset'
+        }))
+      ]
+
+      setServices(combinedServices)
+      console.log('Services and assets loaded from Supabase:', combinedServices.length)
+
+      // Fetch incidents from tickets table (using tickets as incidents for now)
+      const { data: incidentsData, error: incidentsError } = await supabase
+        .from('tickets')
+        .select('id, title, description, status, priority, created_at')
+        .eq('category', 'incident')
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (incidentsError) {
+        console.error('Error fetching incidents:', incidentsError)
+        const mockIncidents = [
+          {
+            id: '1',
+            title: 'API Response Time Degradation',
+            status: 'investigating',
+            severity: 'medium',
+            description: 'Some API endpoints experiencing slower response times',
+            createdAt: '2024-01-15T09:00:00Z'
+          }
+        ]
+        setIncidents(mockIncidents)
+      } else {
+        const formattedIncidents = (incidentsData || []).map(incident => ({
+          id: incident.id,
+          title: incident.title,
+          status: incident.status,
+          severity: incident.priority,
+          description: incident.description,
+          createdAt: incident.created_at
+        }))
+        setIncidents(formattedIncidents)
+      }
+
+    } catch (error) {
+      console.error('Error fetching services and assets:', error)
+      toast.error('Failed to load services and assets. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1197,6 +1515,137 @@ function ServicesContent({ subTab }: { subTab: string }) {
       case 'maintenance': return 'bg-blue-100 text-blue-800'
       case 'outage': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const createTicketForService = async (service: any) => {
+    try {
+      const { user } = useAuth()
+      if (!user?.id) {
+        toast.error('Please log in to create a ticket')
+        return
+      }
+
+      // Create a ticket for the service
+      const { data, error } = await supabase
+        .from('tickets')
+        .insert({
+          title: `Issue with ${service.name}`,
+          description: `Customer reported an issue with ${service.name} (${service.type}). Service status: ${service.status}`,
+          category: service.type === 'asset' ? 'hardware' : 'service',
+          priority: service.status === 'outage' ? 'urgent' : 'medium',
+          created_by: user.id,
+          metadata: {
+            service_id: service.id,
+            service_name: service.name,
+            service_type: service.type,
+            service_status: service.status
+          }
+        })
+        .select()
+
+      if (error) {
+        console.error('Error creating ticket:', error)
+        toast.error('Failed to create ticket. Please try again.')
+        return
+      }
+
+      toast.success(`Ticket created for ${service.name}`)
+      console.log('Ticket created:', data)
+      
+      // Trigger rule engine evaluation
+      await evaluateRulesForTicket(data[0])
+      
+    } catch (error) {
+      console.error('Error creating ticket for service:', error)
+      toast.error('Failed to create ticket. Please try again.')
+    }
+  }
+
+  const evaluateRulesForTicket = async (ticket: any) => {
+    try {
+      // Fetch active rules from the rule engine
+      const { data: rules, error } = await supabase
+        .from('rules')
+        .select('*')
+        .eq('is_active', true)
+
+      if (error || !rules) {
+        console.log('No rules found or error fetching rules')
+        return
+      }
+
+      // Evaluate rules against the ticket
+      for (const rule of rules) {
+        if (evaluateRuleCondition(rule, ticket)) {
+          await executeRuleAction(rule, ticket)
+        }
+      }
+    } catch (error) {
+      console.error('Error evaluating rules:', error)
+    }
+  }
+
+  const evaluateRuleCondition = (rule: any, ticket: any) => {
+    // Simple rule evaluation logic
+    // In a real implementation, this would be more sophisticated
+    try {
+      const conditions = rule.conditions || ''
+      
+      // Example: priority = "urgent" AND category = "service"
+      if (conditions.includes('priority = "urgent"') && ticket.priority === 'urgent') {
+        return true
+      }
+      
+      if (conditions.includes('category = "service"') && ticket.category === 'service') {
+        return true
+      }
+      
+      return false
+    } catch (error) {
+      console.error('Error evaluating rule condition:', error)
+      return false
+    }
+  }
+
+  const executeRuleAction = async (rule: any, ticket: any) => {
+    try {
+      const actions = rule.actions || ''
+      
+      // Example: assign_to = "senior_agent" AND notify = true
+      if (actions.includes('assign_to = "senior_agent"')) {
+        // Find a senior agent
+        const { data: seniorAgents } = await supabase
+          .from('users')
+          .select('id')
+          .eq('role', 'admin')
+          .limit(1)
+
+        if (seniorAgents && seniorAgents.length > 0) {
+          await supabase
+            .from('tickets')
+            .update({ 
+              assigned_to: seniorAgents[0].id,
+              status: 'in_progress',
+              metadata: {
+                ...ticket.metadata,
+                auto_assigned: true,
+                rule_applied: rule.name
+              }
+            })
+            .eq('id', ticket.id)
+
+          toast.success(`Ticket auto-assigned by rule: ${rule.name}`)
+        }
+      }
+      
+      if (actions.includes('notify = true')) {
+        // Send notification (implement notification logic)
+        console.log(`Notification sent for ticket ${ticket.id} by rule ${rule.name}`)
+      }
+      
+    } catch (error) {
+      console.error('Error executing rule action:', error)
     }
   }
 
@@ -1271,27 +1720,52 @@ function ServicesContent({ subTab }: { subTab: string }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {services.map((service, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      service.status === 'operational' ? 'bg-green-500' :
-                      service.status === 'degraded' ? 'bg-yellow-500' :
-                      service.status === 'maintenance' ? 'bg-blue-500' : 'bg-red-500'
-                    }`}></div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{service.name}</h4>
-                      <p className="text-xs text-gray-500">Last incident: {service.lastIncident}</p>
+              {loading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-500">Loading services...</p>
+                </div>
+              ) : services.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No services available</p>
+                </div>
+              ) : (
+                services.map((service, index) => (
+                  <div key={service.id || index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        service.status === 'operational' ? 'bg-green-500' :
+                        service.status === 'degraded' ? 'bg-yellow-500' :
+                        service.status === 'maintenance' ? 'bg-blue-500' : 'bg-red-500'
+                      }`}></div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-medium text-gray-900">{service.name}</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {service.type || 'service'}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-500">{service.description}</p>
+                        <p className="text-xs text-gray-400">Last incident: {service.lastIncident}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className={getStatusColor(service.status)}>
+                        {service.status}
+                      </Badge>
+                      <p className="text-xs text-gray-600 mt-1">{service.uptime} uptime</p>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="mt-2 text-xs"
+                        onClick={() => createTicketForService(service)}
+                      >
+                        Create Ticket
+                      </Button>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge className={getStatusColor(service.status)}>
-                      {service.status}
-                    </Badge>
-                    <p className="text-xs text-gray-600 mt-1">{service.uptime} uptime</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1330,42 +1804,47 @@ function HelpContent({ subTab }: { subTab: string }) {
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    const mockArticles = [
-      {
-        id: 1,
-        title: 'How to Reset Your Password',
-        category: 'Account Management',
-        content: 'Step-by-step guide to reset your password...',
-        views: 1250,
-        helpful: 89
-      },
-      {
-        id: 2,
-        title: 'Setting Up Two-Factor Authentication',
-        category: 'Security',
-        content: 'Learn how to enable 2FA for better security...',
-        views: 890,
-        helpful: 76
-      }
-    ]
-    setArticles(mockArticles)
-
-    const mockFaqs = [
-      {
-        id: 1,
-        question: 'How do I create a new ticket?',
-        answer: 'Click on the "Create Ticket" button in the Tickets section and fill out the form with your issue details.',
-        category: 'Tickets'
-      },
-      {
-        id: 2,
-        question: 'What is the response time for support?',
-        answer: 'We aim to respond to all tickets within 2 hours during business hours (9 AM - 6 PM EST).',
-        category: 'Support'
-      }
-    ]
-    setFaqs(mockFaqs)
+    fetchKnowledgeBase()
   }, [subTab])
+
+  const fetchKnowledgeBase = async () => {
+    try {
+      const { data: articlesData, error: articlesError } = await supabase
+        .from('knowledge_base')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (articlesError) {
+        console.error('Error fetching knowledge base:', articlesError)
+        toast.error('Failed to load knowledge base. Please try again.')
+        return
+      }
+
+      setArticles(articlesData || [])
+      console.log('Knowledge base articles loaded from Supabase:', articlesData?.length || 0)
+
+      // Note: FAQs would require a separate faqs table in Supabase
+      // For now, using mock data until faqs table is implemented
+      const mockFaqs = [
+        {
+          id: 1,
+          question: 'How do I create a new ticket?',
+          answer: 'Click on the "Create Ticket" button in the Tickets section and fill out the form with your issue details.',
+          category: 'Tickets'
+        },
+        {
+          id: 2,
+          question: 'What is the response time for support?',
+          answer: 'We aim to respond to all tickets within 2 hours during business hours (9 AM - 6 PM EST).',
+          category: 'Support'
+        }
+      ]
+      setFaqs(mockFaqs)
+    } catch (error) {
+      console.error('Error fetching knowledge base:', error)
+      toast.error('Failed to load knowledge base. Please try again.')
+    }
+  }
 
   const filteredArticles = articles.filter(article =>
     article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

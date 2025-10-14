@@ -31,6 +31,8 @@ import {
   Plug
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
+import { supabase } from '@/lib/supabase/client'
+import toast from 'react-hot-toast'
 
 export default function AdminPortal() {
   const router = useRouter()
@@ -60,46 +62,71 @@ export default function AdminPortal() {
 
   const fetchDashboardData = async () => {
     try {
-      // Mock data for frontend development
-      const mockTickets = [
-        {
-          id: '1',
-          title: 'Login Issue',
-          description: 'User unable to login to the system',
-          status: 'open',
-          priority: 'high',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          title: 'Password Reset',
-          description: 'Need help resetting password',
-          status: 'in_progress',
-          priority: 'medium',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: '3',
-          title: 'Feature Request',
-          description: 'Add dark mode support',
-          status: 'resolved',
-          priority: 'low',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-        },
-      ]
+      setLoading(true)
+      
+      // Fetch tickets data from Supabase
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('tickets')
+        .select('id, title, description, status, priority, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10)
 
-      setStats({
-        totalTickets: 156,
-        openTickets: 23,
-        resolvedTickets: 133,
-        avgResponseTime: 2.5,
-        satisfactionRating: 4.2,
-        totalUsers: 45,
-        knowledgeBaseArticles: 28,
-        activeWorkflows: 12
-      })
+      // Fetch analytics data from Supabase
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('analytics')
+        .select('metric_name, metric_value')
+        .in('metric_name', ['total_tickets', 'resolved_tickets', 'average_resolution_time', 'customer_satisfaction'])
 
-      setRecentTickets(mockTickets)
+      // Fetch users count
+      const { count: usersCount, error: usersError } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+
+      // Fetch knowledge base count
+      const { count: knowledgeCount, error: knowledgeError } = await supabase
+        .from('knowledge_base')
+        .select('*', { count: 'exact', head: true })
+
+      // Fetch workflows count
+      const { count: workflowsCount, error: workflowsError } = await supabase
+        .from('workflows')
+        .select('*', { count: 'exact', head: true })
+
+      if (ticketsError || analyticsError || usersError || knowledgeError || workflowsError) {
+        console.error('Error fetching dashboard data:', { ticketsError, analyticsError, usersError, knowledgeError, workflowsError })
+        toast.error('Failed to load dashboard data. Please try again.')
+        return
+      }
+        // Calculate stats from real data
+        const totalTickets = ticketsData?.length || 0
+        const openTickets = ticketsData?.filter(t => t.status === 'open').length || 0
+        const resolvedTickets = ticketsData?.filter(t => t.status === 'resolved').length || 0
+        
+        // Get analytics values
+        const avgResponseTime = analyticsData?.find(a => a.metric_name === 'average_resolution_time')?.metric_value || 2.5
+        const satisfactionRating = analyticsData?.find(a => a.metric_name === 'customer_satisfaction')?.metric_value || 4.2
+
+        setStats({
+          totalTickets,
+          openTickets,
+          resolvedTickets,
+          avgResponseTime,
+          satisfactionRating,
+          totalUsers: usersCount || 0,
+          knowledgeBaseArticles: knowledgeCount || 0,
+          activeWorkflows: workflowsCount || 0
+        })
+
+        setRecentTickets(ticketsData || [])
+        
+        console.log('Admin portal data loaded from Supabase:', {
+          totalTickets,
+          openTickets,
+          resolvedTickets,
+          totalUsers: usersCount,
+          knowledgeBaseArticles: knowledgeCount,
+          activeWorkflows: workflowsCount
+        })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {

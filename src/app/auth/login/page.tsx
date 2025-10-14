@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useAuth } from '@/components/providers/auth-provider'
+import { supabase } from '@/lib/supabase/client'
 import { CornerCircleBar } from '@/components/ui/corner-circle-bar'
 import { RotatingWheelAnimation } from '@/components/ui/rotating-wheel-animation'
 import { ParticleSystem } from '@/components/ui/particle-system'
@@ -13,7 +14,7 @@ import Link from 'next/link'
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signIn } = useAuth()
+  const { signIn, user } = useAuth()
   
   const [formData, setFormData] = useState({
     email: '',
@@ -23,6 +24,36 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [loginSuccess, setLoginSuccess] = useState(false)
+
+  // Handle redirection after successful login
+  useEffect(() => {
+    if (loginSuccess && user) {
+      console.log('Login successful, validating portal type...')
+      console.log('Selected portal type:', formData.role)
+      console.log('User actual role:', user.role)
+      
+      // Validate that the selected portal matches the user's actual role
+      if (user.role === formData.role) {
+        if (user.role === 'admin') {
+          console.log('Portal type matches user role, redirecting to admin dashboard')
+          router.push('/admin/dashboard')
+        } else if (user.role === 'customer') {
+          console.log('Portal type matches user role, redirecting to customer dashboard')
+          router.push('/customer/dashboard')
+        }
+      } else if (user.role === 'admin' && formData.role === 'customer') {
+        setError('❌ This account is for Admin Portal. Please select "Admin Portal" from the dropdown.')
+        setLoginSuccess(false)
+      } else if (user.role === 'customer' && formData.role === 'admin') {
+        setError('❌ This account is for Customer Portal. Please select "Customer Portal" from the dropdown.')
+        setLoginSuccess(false)
+      } else {
+        console.log('Unknown role, redirecting to welcome page')
+        router.push('/')
+      }
+    }
+  }, [loginSuccess, user, formData.role, router])
 
   // Scroll-based animations
   const { scrollYProgress } = useScroll()
@@ -45,13 +76,8 @@ function LoginForm() {
       
       await Promise.race([loginPromise, timeoutPromise])
       
-      console.log('Login successful, redirecting to:', `/${formData.role}/dashboard`)
-      
-      // Add a small delay to ensure auth state is updated
-      setTimeout(() => {
-        console.log('Executing redirect now...')
-        router.push(`/${formData.role}/dashboard`)
-      }, 100)
+      console.log('Login successful, setting success flag')
+      setLoginSuccess(true)
       
     } catch (err: any) {
       console.error('Login error:', err)
@@ -300,17 +326,19 @@ function LoginForm() {
             </div>
           </motion.div>
 
-          {/* Demo Credentials */}
+          {/* Real Authentication Notice */}
           <motion.div
             className="mt-8 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
           >
-            <h4 className="text-white font-medium mb-3 text-sm">Login Credentials</h4>
+            <h4 className="text-white font-medium mb-3 text-sm">Secure Authentication</h4>
             <div className="text-white/80 text-xs space-y-2">
-              <div><strong>Admin:</strong> preetamraj2002@gmail.com / admin123</div>
-              <div><strong>Customer:</strong> preetamspacee@gmail.com / customer123</div>
+              <div>🔒 Real Supabase authentication enabled</div>
+              <div>✅ Email verification required</div>
+              <div>🛡️ Secure password validation</div>
+              <div>🎯 Portal type must match your account role</div>
             </div>
           </motion.div>
         </div>

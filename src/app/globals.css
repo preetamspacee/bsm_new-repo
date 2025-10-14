@@ -19,6 +19,43 @@
   scroll-snap-type: none;
 }
 
+/* Enhanced trackpad and touch support */
+html, body {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+  /* Better trackpad gesture support */
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+  /* Smooth scrolling for trackpad */
+  scroll-behavior: smooth;
+}
+
+/* Ensure all scrollable elements support trackpad gestures */
+* {
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Better trackpad support */
+  overscroll-behavior: contain;
+}
+
+/* Trackpad-specific optimizations */
+@media (pointer: fine) {
+  html, body {
+    /* Enhanced trackpad scrolling */
+    scroll-behavior: smooth;
+    /* Better momentum scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent scroll chaining */
+    overscroll-behavior: contain;
+  }
+  
+  /* Smooth scrolling for trackpad users */
+  .scrollable {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
@@ -32,18 +69,18 @@ body {
 
 /* Ultra-fast theme transitions with GPU acceleration */
 * {
-  transition: background-color 0.01s ease, color 0.01s ease, border-color 0.01s ease, transform 0.01s ease !important;
+  transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s ease !important;
 }
 
 /* Quick hover responses with hardware acceleration */
 *:hover {
-  transition: all 0.01s ease !important;
+  transition: all 0.1s ease !important;
   transform: translateZ(0);
 }
 
 /* Light mode specific optimizations */
 .light * {
-  transition: background-color 0.005s ease, color 0.005s ease, border-color 0.005s ease !important;
+  transition: background-color 0.05s ease, color 0.05s ease, border-color 0.05s ease !important;
   transform: translateZ(0);
   backface-visibility: hidden;
   will-change: transform, opacity;

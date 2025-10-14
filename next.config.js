@@ -9,7 +9,12 @@ const nextConfig = {
   // Disable static optimization for pages that require Supabase
   experimental: {
     esmExternals: false,
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react'],
   },
+  // Performance optimizations
+  swcMinify: true,
+  compress: true,
   // Handle missing environment variables during build
   webpack: (config, { isServer }) => {
     if (!isServer) {

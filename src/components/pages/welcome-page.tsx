@@ -25,6 +25,10 @@ export function WelcomePage() {
   const { user, loading } = useAuth()
   const [isDemoMode, setIsDemoMode] = useState(false)
 
+  // Debug logging
+  console.log('WelcomePage - User:', user)
+  console.log('WelcomePage - Loading:', loading)
+
   const handleRoleSelection = (role: 'admin' | 'customer') => {
     if (isDemoMode) {
       // Demo mode - show preview
@@ -87,8 +91,21 @@ export function WelcomePage() {
               v1.0.0
             </Badge>
             {user ? (
-              <Button onClick={() => router.push(`/${user.role}/dashboard`)}>
-                Go to Dashboard
+              <Button onClick={() => {
+                console.log('Go to Dashboard clicked - User:', user)
+                console.log('User role:', user.role)
+                if (user.role === 'admin') {
+                  console.log('Redirecting to admin dashboard')
+                  router.push('/admin/dashboard')
+                } else if (user.role === 'customer') {
+                  console.log('Redirecting to customer dashboard')
+                  router.push('/customer/dashboard')
+                } else {
+                  console.log('Unknown role:', user.role, 'redirecting to login')
+                  router.push('/auth/login')
+                }
+              }}>
+                Go to Dashboard ({user.role || 'unknown'})
               </Button>
             ) : (
               <Button variant="outline" onClick={() => router.push('/auth/login')}>

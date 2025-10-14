@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const queryPromise = supabase
         .from('users')
-        .select('*')
+        .select('id, email, role, full_name, avatar_url, is_verified, last_login')
         .eq('id', authUser.id)
         .single();
       
@@ -113,57 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching user profile:', error)
-        console.log('Creating new user profile for:', authUser.email)
-        
-        console.log('About to insert new user...')
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert({
-            id: authUser.id,
-            email: authUser.email!,
-            full_name: authUser.user_metadata?.full_name || '',
-            role: 'customer', // Default role
-            is_verified: authUser.email_confirmed_at ? true : false,
-            last_login: new Date().toISOString(),
-          })
-          .select()
-          .single()
-
-        console.log('User creation completed!')
-        console.log('User creation result:', { newUser, insertError })
-
-        if (insertError) {
-          console.error('Error creating user profile:', insertError)
-          // Fallback to basic user data
-          const fallbackUser: AuthUser = {
-            id: authUser.id,
-            email: authUser.email || '',
-            full_name: authUser.user_metadata?.full_name || '',
-            role: 'customer',
-            avatar_url: authUser.user_metadata?.avatar_url || null,
-            created_at: authUser.created_at,
-            updated_at: authUser.updated_at || authUser.created_at,
-            last_login: new Date().toISOString(),
-            app_metadata: authUser.app_metadata,
-            user_metadata: authUser.user_metadata,
-            aud: authUser.aud
-          }
-          setUser(fallbackUser)
-          setLoading(false)
-          console.log('Fallback user set')
-          return
-        }
-
-        setUser({
-          ...authUser,
-          role: newUser.role,
-          full_name: newUser.full_name,
-          avatar_url: newUser.avatar_url,
-          is_verified: newUser.is_verified,
-          last_login: newUser.last_login,
-        })
-        console.log('New user profile created and set:', newUser)
-        return
+        throw error
       }
 
       // Update last login
@@ -192,23 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('User state updated successfully')
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
-      // Fallback to basic user data if database fails
-      const fallbackUser: AuthUser = {
-        id: authUser.id,
-        email: authUser.email || '',
-        full_name: authUser.user_metadata?.full_name || '',
-        role: 'customer',
-        avatar_url: authUser.user_metadata?.avatar_url || null,
-        created_at: authUser.created_at,
-        updated_at: authUser.updated_at || authUser.created_at,
-        last_login: new Date().toISOString(),
-        app_metadata: authUser.app_metadata,
-        user_metadata: authUser.user_metadata,
-        aud: authUser.aud
-      }
-      setUser(fallbackUser)
+      // Don't use fallback - let the error propagate so we can see what's wrong
       setLoading(false)
-      console.log('Fallback user set due to error')
+      throw error
     }
   }
 
@@ -228,28 +164,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Supabase auth error:', error)
-        
-        // Only fall back to mock auth if it's a network/connection error, not invalid credentials
-        if (error.message.includes('network') || error.message.includes('connection') || error.message.includes('timeout')) {
-          console.log('Network error detected, using mock authentication')
-          setUser({
-            id: 'mock-user-id',
-            email: email,
-            role: role,
-            full_name: role === 'admin' ? 'Admin User' : 'Customer User',
-            avatar_url: undefined,
-            is_verified: true,
-            last_login: new Date().toISOString(),
-            app_metadata: {},
-            user_metadata: {},
-            aud: 'authenticated',
-            created_at: new Date().toISOString(),
-          } as AuthUser)
-          toast.success('Successfully signed in! (Demo Mode)')
-          setLoading(false)
-          return Promise.resolve()
-        }
-        
         toast.error(error.message || 'Invalid email or password')
         setLoading(false)
         throw error
@@ -258,31 +172,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('Supabase auth successful:', data.user.email)
         
-        // Update user role if needed
-        if (role) {
-          console.log('Updating user role to:', role)
-          await supabase
-            .from('users')
-            .update({ role })
-            .eq('id', data.user.id)
-        }
-        
         console.log('Fetching user profile...')
         
-        // For admin user, bypass the problematic fetchUserProfile and set user directly
-        if (email === 'preetamraj2002@gmail.com' && role === 'admin') {
-          console.log('Bypassing fetchUserProfile for admin user')
-          setUser({
-            ...data.user,
-            role: 'admin',
-            full_name: 'Admin User',
-            avatar_url: undefined,
-            is_verified: true,
-            last_login: new Date().toISOString(),
-          })
-          toast.success('Successfully signed in!')
-          return
-        }
+        // Fetch user profile from database
+        console.log('Fetching user profile for authenticated user')
         
         await fetchUserProfile(data.user)
         toast.success('Successfully signed in!')

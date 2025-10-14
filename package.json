@@ -62,6 +62,7 @@
     "animejs": "^4.2.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "critters": "^0.0.23",
     "date-fns": "^2.30.0",
     "framer-motion": "^10.18.0",
     "gsap": "^3.13.0",

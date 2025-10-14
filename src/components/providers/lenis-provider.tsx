@@ -35,6 +35,28 @@ export function LenisProvider({ children }: LenisProviderProps) {
     };
   }, []);
 
+  // Trackpad detection utility
+  const detectTrackpad = useCallback(() => {
+    let isTrackpad = false;
+    
+    // Listen for wheel events to detect trackpad vs mouse
+    const handleWheel = (e: WheelEvent) => {
+      // Trackpad typically has smaller deltaY values and more frequent events
+      if (Math.abs(e.deltaY) < 100 && e.deltaMode === 0) {
+        isTrackpad = true;
+      } else {
+        isTrackpad = false;
+      }
+      
+      // Update CSS custom property for trackpad detection
+      document.documentElement.style.setProperty('--is-trackpad', isTrackpad ? '1' : '0');
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
+
   // Throttled scroll handler for better performance
   const handleScroll = useCallback(({ scroll, limit, velocity, direction, progress }: any) => {
     const now = performance.now();
@@ -87,10 +109,12 @@ export function LenisProvider({ children }: LenisProviderProps) {
     const lenis = new Lenis({
       duration: 0.8,
       easing: (t) => 1 - Math.pow(1 - t, 3),
-      touchMultiplier: 1.5,
+      touchMultiplier: 2.0, // Better trackpad support
       infinite: false,
       lerp: 0.1,
-      wheelMultiplier: 1,
+      wheelMultiplier: 0.5, // Reduce mouse wheel sensitivity
+      // Better trackpad support
+      gestureOrientation: 'vertical',
     });
 
     // Store global instance
@@ -99,6 +123,9 @@ export function LenisProvider({ children }: LenisProviderProps) {
 
     // Cache elements on mount
     cacheElements();
+
+    // Initialize trackpad detection
+    const cleanupTrackpadDetection = detectTrackpad();
 
     // Optimized animation frame loop with RAF
     const raf = (time: number) => {
@@ -130,8 +157,9 @@ export function LenisProvider({ children }: LenisProviderProps) {
       globalLenis = null;
       (window as any).lenis = null;
       observer.disconnect();
+      cleanupTrackpadDetection();
     };
-  }, [handleScroll, cacheElements]);
+  }, [handleScroll, cacheElements, detectTrackpad]);
 
   return <>{children}</>;
 }
