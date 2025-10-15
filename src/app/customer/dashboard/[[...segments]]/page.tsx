@@ -83,7 +83,8 @@ import {
   Users,
   UserCheck,
   UserX,
-  UserPlus
+  UserPlus,
+  LogOut
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
