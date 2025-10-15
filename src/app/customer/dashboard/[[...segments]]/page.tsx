@@ -1421,14 +1421,14 @@ function ServicesContent({ subTab }: { subTab: string }) {
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .eq('is_active', true)
+        .eq('status', 'active')
         .order('name')
 
       // Fetch assets from Supabase
       const { data: assetsData, error: assetsError } = await supabase
         .from('assets')
         .select('*')
-        .eq('is_active', true)
+        .eq('status', 'operational')
         .order('name')
 
       if (servicesError || assetsError) {
