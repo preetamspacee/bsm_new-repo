@@ -109,12 +109,23 @@ export function LenisProvider({ children }: LenisProviderProps) {
     const lenis = new Lenis({
       duration: 0.8,
       easing: (t) => 1 - Math.pow(1 - t, 3),
-      touchMultiplier: 2.0, // Better trackpad support
+      touchMultiplier: 2.5, // Enhanced trackpad support
       infinite: false,
-      lerp: 0.1,
-      wheelMultiplier: 0.5, // Reduce mouse wheel sensitivity
-      // Better trackpad support
+      lerp: 0.08, // Smoother interpolation
+      wheelMultiplier: 0.8, // Better trackpad wheel sensitivity
+      // Enhanced trackpad support
       gestureOrientation: 'vertical',
+      // Additional trackpad optimizations
+      normalizeWheel: true,
+      // Better momentum scrolling
+      momentum: true,
+      // Improved gesture detection
+      gestureMultiplier: 1.2,
+      // Better handling of prevented elements
+      prevent: (node) => {
+        return node.hasAttribute('data-lenis-prevent') || 
+               node.closest('[data-lenis-prevent]') !== null;
+      },
     });
 
     // Store global instance

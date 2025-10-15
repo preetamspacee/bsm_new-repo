@@ -9,14 +9,18 @@
   box-sizing: border-box;
 }
 
-/* Trackpad scrolling support */
+/* Trackpad scrolling support - Enhanced for admin dashboard */
 .scrollable {
   -webkit-overflow-scrolling: touch;
   overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  /* Additional trackpad support */
+  scroll-behavior: auto; /* Let Lenis handle smooth scrolling */
+  /* Enhanced trackpad support */
   overscroll-behavior: contain;
   scroll-snap-type: none;
+  /* Better momentum scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Ensure trackpad gestures work */
+  touch-action: pan-y;
 }
 
 /* Enhanced trackpad and touch support */
@@ -1139,6 +1143,43 @@ canvas {
 
 .lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
+  /* Enhanced trackpad support for prevented elements */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  touch-action: pan-y;
+}
+
+/* Admin dashboard specific trackpad fixes */
+.admin-dashboard {
+  /* Ensure trackpad gestures work in admin layout */
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-dashboard .scrollable {
+  /* Enhanced trackpad support for admin dashboard */
+  scroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  /* Better momentum scrolling */
+  scroll-snap-type: none;
+}
+
+/* Fix for admin dashboard sidebar scrolling */
+.admin-sidebar {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+/* Fix for admin dashboard main content scrolling */
+.admin-content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scroll-behavior: auto;
 }
 
 /* Reduce motion for accessibility */

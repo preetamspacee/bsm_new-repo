@@ -48,6 +48,7 @@ import {
   ThumbsDown,
   MessageCircle,
   Send,
+  LogOut,
   Archive,
   Trash2,
   MoreHorizontal,
@@ -83,8 +84,7 @@ import {
   Users,
   UserCheck,
   UserX,
-  UserPlus,
-  LogOut
+  UserPlus
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
@@ -444,7 +444,7 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
       )}
 
       {/* Content Area */}
-      <div className="p-6 overflow-y-auto scrollable flex-1">
+      <div className="p-6 overflow-y-auto scrollable flex-1" data-lenis-prevent>
         {activeTab === 'dashboard' && <DashboardContent data={customerData} />}
         {activeTab === 'tickets' && <TicketsContent subTab={activeSubTab} />}
         {activeTab === 'ratings' && <RatingsContent subTab={activeSubTab} />}
@@ -849,7 +849,8 @@ function TicketsContent({ subTab }: { subTab: string }) {
           created_at,
           updated_at,
           category,
-          assignee:users!tickets_assignee_id_fkey(full_name)
+          assigned_to,
+          assignee:users!assigned_to(full_name)
         `)
         .eq('created_by', user.id)
         .order('created_at', { ascending: false })
@@ -1177,7 +1178,7 @@ function TicketsContent({ subTab }: { subTab: string }) {
 
       {selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollable">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollable" data-lenis-prevent>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">{selectedTicket.title}</h2>
               <Button variant="ghost" onClick={() => setSelectedTicket(null)}>
@@ -1211,7 +1212,7 @@ function TicketsContent({ subTab }: { subTab: string }) {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollable">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollable" data-lenis-prevent>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Create New Ticket</h2>
               <Button variant="ghost" onClick={() => setShowCreateModal(false)}>

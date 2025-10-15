@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { 
   Home, MessageSquare, Users, Building2, Package, Shield, RotateCcw,
   BarChart3, BookOpen, Plug, Settings, RefreshCw, Download,
-  ChevronDown, ChevronRight, User, Clock, AlertTriangle, CheckCircle, Plus, Search, Filter, Eye, Edit, MoreHorizontal, X, Server, Star
+  ChevronDown, ChevronRight, User, Clock, AlertTriangle, CheckCircle, Plus, Search, Filter, Eye, Edit, MoreHorizontal, X, Server, Star, LogOut
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,7 +28,7 @@ import SettingsPage from '@/components/pages/admin/settings'
 export default function AdminDashboard() {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   
   const [loading, setLoading] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({})
@@ -390,6 +390,15 @@ export default function AdminDashboard() {
     // Update URL with sub-tab
     const newPath = `/admin/dashboard/${activeTab}/${subTabId}`
     router.push(newPath, { scroll: false })
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -937,15 +946,15 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 admin-dashboard">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg flex flex-col">
+      <div className="w-64 bg-white shadow-lg flex flex-col admin-sidebar">
         <div className="p-6">
           <h1 className="text-xl font-bold text-gray-900">BSM Platform</h1>
           <p className="text-sm text-gray-600">Admin Dashboard</p>
           </div>
 
-        <nav className="mt-6 flex-1 overflow-y-auto scrollable">
+        <nav className="mt-6 flex-1 overflow-y-auto scrollable" data-lenis-prevent>
           {tabs.map((tab: any) => {
             const Icon = tab.icon
             return (
@@ -1015,12 +1024,16 @@ export default function AdminDashboard() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+          <Button onClick={handleLogout} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
                   </div>
                   </div>
       </div>
 
         {/* Content Area */}
-        <div className="flex-1 p-6 overflow-y-auto scrollable">
+        <div className="flex-1 p-6 overflow-y-auto scrollable admin-content" data-lenis-prevent>
           {renderContent()}
                     </div>
                   </div>
@@ -1028,7 +1041,7 @@ export default function AdminDashboard() {
       {/* Ticket Detail Modal */}
       {selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" data-lenis-prevent>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">{selectedTicket.title}</h2>
               <Button variant="ghost" onClick={() => setSelectedTicket(null)}>
@@ -1070,7 +1083,7 @@ export default function AdminDashboard() {
       {/* Create Ticket Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" data-lenis-prevent>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Create New Ticket</h2>
               <Button variant="ghost" onClick={() => setShowCreateModal(false)}>
