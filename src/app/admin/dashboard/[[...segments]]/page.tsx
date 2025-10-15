@@ -24,6 +24,7 @@ import WorkflowPage from '@/components/pages/admin/workflows'
 import KnowledgePage from '@/components/pages/admin/knowledge'
 import IntegrationsPage from '@/components/pages/admin/integrations'
 import SettingsPage from '@/components/pages/admin/settings'
+import DataFlowManager from '@/components/dataflow/DataFlowManager'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -283,6 +284,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'dataflow', label: 'Data Flow', icon: Server },
     { id: 'tickets', label: 'Tickets', icon: MessageSquare },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'accounts', label: 'Accounts', icon: Building2 },
@@ -915,6 +917,8 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case 'dashboard':
         return renderDashboardContent()
+      case 'dataflow':
+        return <DataFlowManager userRole="admin" />
       case 'tickets':
         return renderTicketsContent()
       case 'users':

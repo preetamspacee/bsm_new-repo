@@ -48,7 +48,6 @@ import {
   ThumbsDown,
   MessageCircle,
   Send,
-  LogOut,
   Archive,
   Trash2,
   MoreHorizontal,
@@ -88,6 +87,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
+import DataFlowManager from '@/components/dataflow/DataFlowManager'
 
 export default function CustomerDashboard({ params }: { params: { segments?: string[] } }) {
   const router = useRouter()
@@ -307,6 +307,7 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'dataflow', label: 'Data Flow', icon: Activity },
     { id: 'tickets', label: 'Tickets', icon: MessageSquare },
     { id: 'ratings', label: 'Ratings', icon: Star },
     { id: 'services', label: 'Services', icon: Monitor },
@@ -446,6 +447,7 @@ export default function CustomerDashboard({ params }: { params: { segments?: str
       {/* Content Area */}
       <div className="p-6 overflow-y-auto scrollable flex-1" data-lenis-prevent>
         {activeTab === 'dashboard' && <DashboardContent data={customerData} />}
+        {activeTab === 'dataflow' && <DataFlowManager userRole="customer" />}
         {activeTab === 'tickets' && <TicketsContent subTab={activeSubTab} />}
         {activeTab === 'ratings' && <RatingsContent subTab={activeSubTab} />}
         {activeTab === 'services' && <ServicesContent subTab={activeSubTab} />}
